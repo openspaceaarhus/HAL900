@@ -367,12 +367,12 @@ sub consolidatePage {
 
     my %bankComments;
     
-    my $bcres = db->sql("select bankcomment,a.id,owner_id 
+    my $bcres = db->sql("select b.bankcomment,a.id,a.owner_id 
          from banktransaction b 
          join accounttransaction t on (t.id=b.transaction_id)
          join account a on (a.id=t.source_account_id) 
-         where owner_id is not null and a.type_id=2 
-         group by (bankcomment,a.id,owner_id)")
+         where a.owner_id is not null and a.type_id=2 ")
+#         group by (b.bankcomment,a.id,a.owner_id)")
 	or die "Failed to get old bank comments";
     while (my ($comment, $accountId, $ownerId) = $bcres->fetchrow_array) {
       $comment =~ s/\s+Meddelnr\. \d+.*$/ /;
@@ -383,7 +383,8 @@ sub consolidatePage {
 
     for my $comment (sort keys %bankComments) {
       my %owners = %{$bankComments{$comment}};
-      if (%owners == 1) {
+      my @owners = keys %owners;
+      if (@owners == 1) {
         my ($account) = values %owners;
         $load .= qq'  commentToAccount("$comment", 2, $account);\n';        
       }             
