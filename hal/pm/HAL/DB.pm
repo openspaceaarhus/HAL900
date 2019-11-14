@@ -12,7 +12,7 @@ use HAL;
 sub new($) {
         my $class = shift;
         return bless {
-                autocommit=>0,
+                autocommit=>0, 
         }, $class;
 }
 
@@ -45,7 +45,7 @@ sub dbh($) {
 	    $cachedPid = $cachedDbh = undef;
 	}
     }
-    
+     
     $cachedLastUse = time;
     $cachedPid = $$;
     return $cachedDbh = DBI->connect(getDBUrl(),

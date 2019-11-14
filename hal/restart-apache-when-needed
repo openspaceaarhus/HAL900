@@ -10,6 +10,7 @@ sub getTime() {
     for my $f (split /\n/, `find -type f`) {
 	next if $f =~ m!/(config|\.svn|static)/!;
 	next if $f =~ m!/[~#]$/!;
+	next if $f =~ m!/\.!;
 	next if $f =~ m!/var/!;
 	
 	my $t = (stat $f)[9];

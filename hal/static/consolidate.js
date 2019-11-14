@@ -18,6 +18,13 @@ function dude(id,type,email,name) {
     strings[type].push([name, id]);
 }
 
+function commentToAccount(comment,type,id) {
+    if (!strings[type]) {
+	strings[type] = new Array();
+    }
+    strings[type].push([comment, id]);
+}
+
 var accounts = new Array();
 function account(id,type,name) {
     if (!accounts[type]) {
@@ -40,7 +47,7 @@ function changetype(id) {
     accountinput.options[accountinput.options.length] = 
 	new Option('Unknown', 0, false, false);
 
-    var text = txns[id];
+    var text = txns[id].toLowerCase();
     var type = typeinput.value;
     var acc = accounts[type];
     if (acc) {

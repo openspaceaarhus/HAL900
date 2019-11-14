@@ -335,11 +335,17 @@ sub consolidatePage {
     $res->finish;
         
     my %seen;    
-    my $atres = db->sql("select owner_id, id, type_id, accountName from account order by accountName")
+    my $atres = db->sql("select owner_id, a.id, type_id, accountName, m.username, m.realname, m.email
+    from account a
+    left outer join member m on (m.id=a.owner_id)
+    order by accountName")
 	or die "Failed to get unconsolidated transactions";
-    while (my ($owner_id, $id, $type_id, $accountName) = $atres->fetchrow_array) {
+    while (my ($owner_id, $id, $type_id, $accountName, $userName, $realName, $email) = $atres->fetchrow_array) {
 	next if $accountName =~ /^Deleted/;
-	$load .= qq' account($id, $type_id, "$accountName");\n';
+        
+        my $nn = $userName ? "$realName aka. $userName <$email>" : $accountName;
+        
+	$load .= qq' account($id, $type_id, "$nn");\n';
 	$seen{$owner_id}{$type_id} = $id if $owner_id;
     }
     $atres->finish;
@@ -359,6 +365,29 @@ sub consolidatePage {
     }
     $mres->finish;
 
+    my %bankComments;
+    
+    my $bcres = db->sql("select bankcomment,a.id,owner_id 
+         from banktransaction b 
+         join accounttransaction t on (t.id=b.transaction_id)
+         join account a on (a.id=t.source_account_id) 
+         where owner_id is not null and a.type_id=2 
+         group by (bankcomment,a.id,owner_id)")
+	or die "Failed to get old bank comments";
+    while (my ($comment, $accountId, $ownerId) = $bcres->fetchrow_array) {
+      $comment =~ s/\s+Meddelnr\. \d+.*$/ /;
+      $comment = lc($comment);  
+      $bankComments{$comment}{$ownerId} = $accountId;
+    }
+    $bcres->finish;
+
+    for my $comment (sort keys %bankComments) {
+      my %owners = %{$bankComments{$comment}};
+      if (%owners == 1) {
+        my ($account) = values %owners;
+        $load .= qq'  commentToAccount("$comment", 2, $account);\n';        
+      }             
+    }    
     
     $html .= qq'
 </table>
