@@ -1,0 +1,21 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use utf8;
+
+use Email::Valid;
+
+my ($email) = @ARGV;
+
+my $err;
+
+if (Email::Valid->address(-address => $email,-mxcheck => 1)) {
+    
+    $err = 0;
+} else {
+    $err = 1;
+}
+
+#print STDERR "Checked '$email': $err\n";
+
+exit $err;

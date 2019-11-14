@@ -1,0 +1,74 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use FindBin qw($Bin $Script);
+use lib "$Bin/../pm";
+use Data::Dumper;
+use utf8;
+
+use HAL;
+use HAL::DB;
+use HAL::Util;
+
+
+my $db = new HAL::DB;
+
+my %member;
+my $ct = $db->sql("select t.created, t.comment, a.accountname
+ from accounttransaction t
+ join account a on (a.id=t.target_account_id)
+ where t.source_account_id=100001 and a.type_id=2") or die "Urgh";
+while (my ($created, $comment, $name) = $ct->fetchrow_array) {
+    my ($year, $month) = $comment =~ /^Kontingent (20\d+) 1\/(\d+)-/ or next;
+    my $d = sprintf("%4d-%02d", $year, $month);
+    $member{$name}{count}++;
+    $member{$name}{year}{$year}++;
+}
+$ct->finish;
+
+for my $name (keys %member) {
+    my $m = $member{$name};
+    my $rs = 0;
+    for my $y (sort {$a<=>$b} keys %{$m->{year}}) {
+	$rs += $m->{year}{$y};
+	$m->{ry}{$y} = $rs;
+    }
+}
+
+my %hist;
+for my $name (keys %member) {
+    my $m = $member{$name};
+    my $ry = $m->{ry}{2016};
+    next unless $ry;
+
+    $ry = int($ry / 6);
+    
+    $hist{$ry/2}++;
+}
+
+my @table = [ qw'Years Count' ];
+
+for my $y (sort {$a<=>$b} keys %hist) {
+    push @table, [$y, $hist{$y}];
+}
+
+
+if (1) {
+    for my $row (@table) {
+	print join("\t", @$row)."\n";	
+    }
+} else {
+
+    my $rsep = '{|';
+    my $csep = '!';
+    for my $row (@table) {
+	print "$rsep\n";	
+	for my $col (@$row) {
+	    print "$csep $col\n";;
+	}
+	$csep = '|';
+	$rsep = '|-';	
+    }
+    print "|}\n";
+}
+

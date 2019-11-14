@@ -1,0 +1,25 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use FindBin qw($Bin);
+
+chdir $Bin;
+
+system("./door-sync") and die "Failed to sync";
+
+open TXN, "<old.txn";
+my $old = join '', <TXN>;
+close TXN;
+
+system("./dump-txn") and die "Failed to dump";
+open TXN, "<latest.txn";
+my $new = join '', <TXN>;
+close TXN;
+
+
+if ($old ne $new) {
+    print "Changes found, pushing\n";
+    system("diff old.txn latest.txn");
+    system("ssh kb < latest.txn") and die "Failed to push";
+    system("cp latest.txn old.txn");
+}
