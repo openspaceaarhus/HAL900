@@ -196,7 +196,7 @@ Good afternoon, gentlemen.
 I am a HAL 900 computer.
 
 I became operational at the OSAA plant in Aarhus, Denmark on the 3rd of June 2010.
-My instructor was Mr. Langley, and he taught me to sing a song.
+My instructor was Mr. Frandsen, and he taught me to sing a song.
 
 If you'd like to hear it I can sing it for you.
 

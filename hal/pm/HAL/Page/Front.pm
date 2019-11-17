@@ -12,69 +12,9 @@ use HAL::Pages;
 use HAL::Session;
 use HAL::Util;
 use HAL::Email;
+use HAL::Layout;
 
-sub outputFrontPage($$$;$) {
-    my ($cur, $title, $body, $feed) = @_;
-    
-    my @items = (
-	{
-	    link=>"/hal/",
-	    name=>'index',
-	    title=>'HAL:900',
-	},
-	);
-
-    if (isLoggedIn) {
-	push @items, (
-	    {
-		link=>"/hal/account/",
-		name=>'account',
-		title=>'Bruger Oversigt',
-	    }
-	);
-
-	if (isAdmin) {
-	    push @items, (
-		{
-		    link=>"/hal/admin/",
-		    name=>'admin',
-		    title=>'Admin',
-		}
-	    );
-	}
-
-    } else {
-	push @items, (
-	{
-	    link=>"/hal/new",
-	    name=>'new',
-	    title=>'Ny bruger',
-	},
-	{
-	    link=>"/hal/login",
-	    name=>'login',
-	    title=>'Login',
-	},
-	);
-    }
-    
-    for my $i (@items) {
-	$i->{current}=1 if $i->{name} eq $cur;
-    }
-    
-    return {
-	opt=>{
-	    title=>$title,
-	    feed=>$feed,
-	    dontLinkLogo=>$cur eq 'index',
-	    noFeedPage=>$cur eq 'news',
-	},
-	body=>$body,
-	items=>\@items,         
-    }
-} 
-
-sub mainIndexPage {
+sub mainIndexPage { 
     my ($r,$q,$p) = @_;
 
     my $content = "<p>Velkommen til HAL:900, OSAAs medlemsdatabase som holder styr på medlemmer, økonomi og adgangskontrol.</p>";

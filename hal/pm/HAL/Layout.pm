@@ -2,7 +2,7 @@
 package HAL::Layout;
 require Exporter;
 @ISA=qw(Exporter);
-@EXPORT = qw(htmlPage htmlPageWithMenu);
+@EXPORT = qw(htmlPage htmlPageWithMenu outputFrontPage);
 use strict;
 use warnings;
 use POSIX;
@@ -22,8 +22,17 @@ sub htmlPage($$;$) {
 
     my $now = $$;    
 
-    $headers .= qq'\n  <META HTTP-EQUIV="Refresh" CONTENT="30">' if $opt->{autorefresh};
-    $headers .= qq'\n  <script type="text/javascript" src="/hal-static/$opt->{js}?now=$now"></script>' if $opt->{js};
+    $headers .= qq'\n  <META HTTP-EQUIV="Refresh" CONTENT="30">' if $opt->{autorefresh};    
+
+    if (my $js = $opt->{js}) {      
+      my @js = ref $js eq 'ARRAY' 
+         ? @$js
+         : ($js);
+         
+      for my $j (@js) {
+        $headers .= qq'\n  <script type="text/javascript" src="/hal-static/$j?now=$now"></script>';
+      }
+    }
     $headers .= qq'\n  <script type="text/javascript" src="/hal-static/typeahead.js?now=$now"></script>';
     $headers .= qq'\n  <script type="text/javascript" src="/hal-static/sorttable.js"></script>';
 
@@ -43,14 +52,15 @@ sub htmlPage($$;$) {
   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
   <title>$title</title>
   <style type="text/css">\@import "/hal-static/style.css";</style>
+  <style type="text/css">\@import "/hal-static/Chart.css";</style>
   <link rel="shortcut icon" href="/hal-static/hal-100.png"/>$headers
 </head><body$onload>
 $body
 </body></html>';
 }
 
-sub htmlPageWithMenu($$$) {
-    my ($opt, $items, $content) = @_;
+sub htmlPageWithMenu {
+    my ($opt, $items, $content, $js) = @_;
     
     my $menu = '';
     for my $item (@$items) {
@@ -112,5 +122,74 @@ sub htmlPageWithMenu($$$) {
 
     return htmlPage($title, $body, $opt); 
 }
+
+sub outputFrontPage {
+    my ($cur, $title, $body, $feed, $js) = @_;
+    
+    my @items = (
+	{
+	    link=>"/hal/",
+	    name=>'index',
+	    title=>'HAL:900',
+	},
+	);
+
+    if (isLoggedIn) {
+	push @items, (
+	    {
+		link=>"/hal/account/",
+		name=>'account',
+		title=>'Bruger Oversigt',
+	    },
+            {
+                link=>"/hal/status/member-count",
+                name=>'status',
+                title=>'Status',
+            },
+	);
+
+	if (isAdmin) {
+	    push @items, (
+		{
+		    link=>"/hal/admin/",
+		    name=>'admin',
+		    title=>'Admin',
+		}
+	    );
+	}
+
+    } else {
+	push @items, (
+	{
+	    link=>"/hal/new",
+	    name=>'new',
+	    title=>'Ny bruger',
+	},
+	{
+	    link=>"/hal/login",
+	    name=>'login',
+	    title=>'Login',
+	},
+	);
+    }
+    
+    for my $i (@items) {
+	$i->{current}=1 if $i->{name} eq $cur;
+    }
+    
+    return {
+	opt=>{
+	    title=>$title,
+	    feed=>$feed,
+	    dontLinkLogo=>$cur eq 'index',
+	    noFeedPage=>$cur eq 'news',
+            js=>$js,
+	},
+	body=>$body,
+	items=>\@items,         
+    }
+} 
+
+
 
 1;
