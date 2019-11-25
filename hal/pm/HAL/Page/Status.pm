@@ -31,7 +31,7 @@ sub statusPage {
   $ct->finish;
 
   my $last = undef;
-  my @table = [ qw'Month Count Sum Up Down' ];
+  my @table = [ qw'Month Count Sum Up Down Normalized' ];
   for my $d (sort keys %dues) {
       my @count = keys %{$dues{$d}};
       my @row = ($d, scalar(@count), $sum{$d});
@@ -44,7 +44,7 @@ sub statusPage {
               $dn++ unless $dues{$d}{$id};
           }
       }
-      push @row, $up, $dn;
+      push @row, $up, $dn, $sum{$d}/200;
 
       push @table, \@row;
 
@@ -96,15 +96,25 @@ sub statusPage {
   shift @table; # Get rid of the header.
   
   my $labels = join ',', map {"'".$_->[0]."'"} @table;
+
+  my $countCol;
+  my $ccn;
+  if ($p->{norm}) {
+	  $countCol = 5;
+	  $ccn = qq'normaliseret til antal fuldt betalende medlemmer, så medlemsskaber med studie rabat tæller halvt. <a href="https://hal.osaa.dk/hal/status/member-count">Skift</a>';
+  } else {
+	  $countCol = 1;
+	  $ccn = qq'ikke normaliseret, så medlemsskaber med studie rabat tæller lige meget.  <a href="https://hal.osaa.dk/hal/status/member-count?norm=1">Skift til normaliseret</a>';
+  }
   
-  my $mid  = join ',', map {$_->[1]} @table;    
-  my $low  = join ',', map {$_->[1]-$_->[3]} @table;    
-  my $high = join ',', map {$_->[1]+$_->[4]} @table;    
+  my $mid  = join ',', map {$_->[$countCol]} @table;    
+  my $low  = join ',', map {$_->[$countCol]-$_->[3]} @table;    
+  my $high = join ',', map {$_->[$countCol]+$_->[4]} @table;    
     
   my $content = qq!<div class="chart-container" style="position: relative; height:40vh; width:80vw">
     <canvas id="chart"></canvas>
     <ul>
-<li>Dette er antallet af betalte kontingenter per måned.</li>
+<li>Dette er antallet af betalte kontingenter per måned, $ccn</li>
 <li>High er det antal kontingenter der ville have været hvis ingen havde nedgraderet til gratis-medlem.</li>
 <li>Low er det antal kontingenter der ville have været hvis ingen nye betalende medlemmer var kommet til.</li>
 </ul>
