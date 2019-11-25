@@ -2,7 +2,7 @@
 package HAL::Util;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify passwordVerifyWithUpgrade);
+@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify passwordVerifyWithUpgrade shabbyPassword);
 
 use strict;
 use warnings;
@@ -86,6 +86,24 @@ sub passwordHash($) {
     return join ':', 'bcrypt', $salt, $cost, $hash;
 }
 
+sub shabbyPassword {
+    my ($hash) = @_;
+
+    my ($scheme, $payload) = split /:/, $hash, 2;
+    return 0 unless $scheme eq 'sha256';
+    my ($shaSalt, $shaHash) = split /:/, $payload;
+
+    my $cost = $MIN_COST; 
+    my $salt = randomstring(8);
+    my $newHash = en_base64(bcrypt_hash({
+	key_nul => 1,
+	cost => $cost,
+	salt => $salt,
+    }, $shaHash));
+    
+    return join ':', 'shabby', $salt, $cost, $shaSalt, $newHash;
+}
+
 sub passwordVerify($$) {
     my ($hash, $passwd) = @_;
 
@@ -115,10 +133,28 @@ sub passwordVerify($$) {
 	    upgrade=>$cost < $MIN_COST
 	};
 	
+    } elsif ($scheme eq 'shabby') {
+	my ($salt, $cost, $shaSalt, $hash) = split /:/, $payload;
+
+	my $shaHash = sha256_hex("$shaSalt:$passwd");
+	
+	my $ok = $hash eq en_base64(bcrypt_hash({
+	    key_nul => 1,
+	    cost => $cost,
+	    salt => $salt,
+        }, $shaHash));	
+
+	return 0 unless $ok;
+	
+	return {
+	    upgrade=>1
+	};
+	
     } else {
 	die "Unknown password scheme $scheme";
     }
 }
+
 
 sub passwordVerifyWithUpgrade {
     my ($hash, $passwd, $id, $db) = @_;
