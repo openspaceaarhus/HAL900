@@ -2,12 +2,17 @@
 package HAL::Util;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify);
+@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify passwordVerifyWithUpgrade);
 
 use strict;
 use warnings;
 use HTML::Entities;
 use Digest::SHA qw(sha256_hex);
+use Crypt::Eksblowfish::Bcrypt qw(bcrypt_hash en_base64 de_base64);
+use Time::HiRes qw(gettimeofday);
+
+# TODO: Figure out how to upgrade to Crypt::Eksblowfish::Bcrypt
+my $MIN_COST = 11;
 
 # -----------------------------------------------------------------------
 my %escapes;
@@ -68,18 +73,65 @@ sub randomdigits($) {
 
 sub passwordHash($) {
     my $passwd = shift;
+
+    # TODO: Increase cost when CPUs are powerful enough to do this in less than 100ms
+    my $cost = $MIN_COST; 
+    my $salt = randomstring(8);
+    my $hash = en_base64(bcrypt_hash({
+	key_nul => 1,
+	cost => $cost,
+	salt => $salt,
+    }, $passwd));
     
-    my $salt = randomstring(10);
-    return join ':', 'sha256', $salt, sha256_hex("$salt:$passwd");
+    return join ':', 'bcrypt', $salt, $cost, $hash;
 }
 
 sub passwordVerify($$) {
     my ($hash, $passwd) = @_;
 
-    my ($scheme, $salt, $h) = split /:/, $hash;
-    die "Unknown password scheme $scheme" unless $scheme eq 'sha256';
+    my ($scheme,$payload) = split /:/, $hash, 2;
+    
+    if ($scheme eq 'sha256') {
+	my ($salt, $hash) = split /:/, $payload;
 
-    return sha256_hex("$salt:$passwd") eq $h ? 1 : 0;   
+	return 0 unless sha256_hex("$salt:$passwd") eq $hash;
+
+	return {
+	    upgrade=>1,	    
+	};
+	
+    } elsif ($scheme eq 'bcrypt') {
+	my ($salt, $cost, $hash) = split /:/, $payload;
+
+	my $ok = $hash eq en_base64(bcrypt_hash({
+	    key_nul => 1,
+	    cost => $cost,
+	    salt => $salt,
+        }, $passwd));	
+
+	return 0 unless $ok;
+	
+	return {
+	    upgrade=>$cost < $MIN_COST
+	};
+	
+    } else {
+	die "Unknown password scheme $scheme";
+    }
+}
+
+sub passwordVerifyWithUpgrade {
+    my ($hash, $passwd, $id, $db) = @_;
+
+    my $ok = passwordVerify($hash, $passwd);
+    return 0 unless $ok;
+    if ($ok->{upgrade}) {
+	my $upgradedHash = passwordHash($passwd);	
+	$db->sql('update member set passwd=? where id=?',
+		 $upgradedHash, $id);	
+    }
+
+    return $ok;
 }
 
 1;

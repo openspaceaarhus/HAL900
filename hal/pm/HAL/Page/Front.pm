@@ -127,7 +127,7 @@ sub loginUser($$$) {
 	    if (!$p->{passwd}) {
 		$form .= "<p>Brugeren med denne email adresse har ikke valgt et password, vi har sendt dig en mail med et link i, som du skal bruge for at fortsætte, check din inbox og spam folder.</p>";
 
-	    } elsif ($id and passwordVerify($hash, $p->{passwd})) {
+	    } elsif ($id and passwordVerifyWithUpgrade($hash, $p->{passwd}, $id, db)) {
 
 		loginSession($id);
 		if (getSession->{wanted}) {
