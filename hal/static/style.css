@@ -85,6 +85,8 @@
 
   breadcrumbs {clear:both; background-color:ccc; }
 
+  fail {background-color:#ffdddd;}
+  
   @media print {
    td {
     border-top: thin dotted black;

@@ -146,6 +146,11 @@ sub outputFrontPage {
                 name=>'status',
                 title=>'Status',
             },
+            {
+                link=>"/hal/lokaler/eval",
+                name=>'lokaler',
+                title=>'Lokaler',
+            },
 	);
 
 	if (isAdmin) {

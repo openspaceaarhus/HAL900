@@ -189,3 +189,38 @@ begin;
 alter table membertype add column userPick boolean default true not null;
 
 commit;
+
+
+begin;
+
+create table space_option (
+       id serial primary key,
+       created timestamp default now(),
+       updated timestamp default now(),
+
+       title varchar unique not null,
+       uri varchar unique not null,
+       description varchar not null
+);
+CREATE TRIGGER update_updated BEFORE UPDATE
+        ON space_option FOR EACH ROW EXECUTE PROCEDURE 
+        update_updated();
+
+create table space_option_eval (
+       created timestamp default now(),
+       updated timestamp default now(),
+ 
+       member_id integer references member(id),
+       space_option_id integer references space_option(id),
+       
+       points integer not null,
+       comment varchar not null,
+
+       primary key (member_id, space_option_id)
+);
+
+CREATE TRIGGER update_updated BEFORE UPDATE
+        ON space_option_eval FOR EACH ROW EXECUTE PROCEDURE 
+        update_updated();
+commit;
+
