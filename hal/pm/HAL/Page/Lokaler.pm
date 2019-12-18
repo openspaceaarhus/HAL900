@@ -119,7 +119,7 @@ sub evalPage {
       my $fail = '';
       
       if ($p->{store}) {
-	  if ($p->{"points$id"} && $p->{"points$id"} ne '') {
+	  if (defined $p->{"points$id"} && $p->{"points$id"} ne '') {
 	      if ($p->{"points$id"} =~ /^\d+$/) {
 
 		  if ($old) {
