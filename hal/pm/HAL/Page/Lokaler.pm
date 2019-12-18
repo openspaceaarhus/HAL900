@@ -185,7 +185,7 @@ Hvis en mulighed slet ikke kan bruges for dig, så svar 0 i kontingent og forkla
 <p>
 Dette er <strong>ikke</strong> en afstemning.
 Besvarelserne er hverken bindende eller private, men vil blive brugt af bestyrelsen til at udforme forslag til generalforsamlingen.
-Flytningen til nye lokaler vil være til afstemning på generalforsamlingen.
+Flytningen til nye lokaler vil være til afstemning på generalforsamlingen. Du kan gemme og rette din evaluering så tit du har lyst.
 </p>
 <form action="/hal/lokaler/eval" method="post">
 $table
