@@ -111,7 +111,7 @@ sub evalPage {
 
   
   my @table = [ qw'Navn Beskrivelse Kontingent Kommentar' ];
-  my $oq = db->sql("select id, title, uri, description from space_option order by id");
+  my $oq = db->sql("select id, title, uri, description from space_option order by title");
   my $error;
   while (my ($id, $title, $uri, $description) = $oq->fetchrow_array) {
       my $old = $old{$id};
