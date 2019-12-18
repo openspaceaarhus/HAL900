@@ -173,7 +173,7 @@ sub evalPage {
 
   my $content = qq'
 <p>
-Dette er <a href="http://osaa.dk/wiki/index.php/Lokaler2020MasterPlan">de mest konkrete muligheder</a> der lige nu er for nye lokaler til OSAA, det kan ske at der i fremtiden kommer flere, det kan også ske at der bliver fjernet muligheder fra listen.
+Dette er <a target="masterplan" href="http://osaa.dk/wiki/index.php/Lokaler2020MasterPlan">de mest konkrete muligheder</a> der lige nu er for nye lokaler til OSAA, det kan ske at der i fremtiden kommer flere, det kan også ske at der bliver fjernet muligheder fra listen.
 </p>
 <p>
 Flølg linket i Kolonnen med Navn for at se en beskrivelse af hver mulighed.
