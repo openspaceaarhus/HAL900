@@ -156,7 +156,7 @@ sub evalPage {
       my $class = $fail ? 'fail' : '';
       
       push @table, [
-	  qq'<a href="$uri">$title</a>',
+	  qq'<a target="lokale$id" href="$uri">$title</a>',
 	  $description,
 	  qq'<input class="$class" title="$fail" type="text" size="4" name="points$id" value="$old->{points}">',
 	  qq'<input type="text" size="70" name="comment$id" value="$old->{comment}">',
@@ -176,12 +176,16 @@ sub evalPage {
 Dette er <a href="http://osaa.dk/wiki/index.php/Lokaler2020">de mest konkrete muligheder</a> der lige nu er for nye lokaler til OSAA, det kan ske at der i fremtiden kommer flere, det kan også ske at der bliver fjernet muligheder fra listen.
 </p>
 <p>
+Flølg linket i Kolonnen med Navn for at se en beskrivelse af hver mulighed.
+</p>
+<p>
 Du bedes nøje overveje hver mulighed og fortælle os hvor meget du vil betale i kontingent per måned for at være medlem, samt evt. en kommentar. Som rettesnor så er et kontingent på 215 kr det samme som vi startede med på KBV105.
 Hvis en mulighed slet ikke kan bruges for dig, så svar 0 i kontingent og forklar hvorfor i kommentar feltet.
 </p>
 <p>
-Besvarelserne er hverken bindende eller private og vil blive brugt af bestyrelsen til at udforme forslag til generalforsamlingen.
-Den bindende afstemning kommer på en generalforsamling.
+Dette er <strong>ikke</strong> en afstemning.
+Besvarelserne er hverken bindende eller private, men vil blive brugt af bestyrelsen til at udforme forslag til generalforsamlingen.
+Flytningen til nye lokaler vil være til afstemning på generalforsamlingen.
 </p>
 <form action="/hal/lokaler/eval" method="post">
 $table
