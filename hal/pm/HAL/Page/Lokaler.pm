@@ -183,9 +183,9 @@ Du bedes nøje overveje hver mulighed og fortælle os hvor meget du vil betale i
 Hvis en mulighed slet ikke kan bruges for dig, så svar 0 i kontingent og forklar hvorfor i kommentar feltet.
 </p>
 <p>
-Dette er <strong>ikke</strong> en afstemning.
+Dette er <strong>ikke</strong> en afstemning. Den mest populære løsning bliver ikke valgt så snart der er nok "stemmer".
 Besvarelserne er hverken bindende eller private, men vil blive brugt af bestyrelsen til at udforme forslag til generalforsamlingen.
-Flytningen til nye lokaler vil være til afstemning på generalforsamlingen. Du kan gemme og rette din evaluering så tit du har lyst.
+Flytningen til nye lokaler vil være til afstemning på generalforsamlingen, som senest skal afholdes 1/6. Du kan gemme og rette din evaluering så tit du vil.
 </p>
 <form action="/hal/lokaler/eval" method="post">
 $table
