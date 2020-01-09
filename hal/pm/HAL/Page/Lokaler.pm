@@ -195,7 +195,7 @@ Flølg linket i Kolonnen med Navn for at se en beskrivelse af hver mulighed.
 </p>
 <p>
 Du bedes nøje overveje hver mulighed og fortælle os hvor meget du vil betale i kontingent per måned for at være medlem, samt evt. en kommentar. Som rettesnor så er et kontingent på 215 kr det samme som vi startede med på KBV105.
-Hvis en mulighed slet ikke kan bruges for dig, så svar 0 i kontingent og forklar hvorfor i kommentar feltet.
+Antag at alle andre vil være med til at betale det samme som dig, mao. skal du ikke tænke over hvad andre mener, kun hvad værdien er for dig.
 </p>
 <p>
 Dette er <strong>ikke</strong> en afstemning. Den mest populære løsning bliver ikke valgt så snart der er nok "stemmer".
