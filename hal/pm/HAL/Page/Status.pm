@@ -99,12 +99,13 @@ sub statusPage {
 
   my $countCol;
   my $ccn;
-  if ($p->{norm}) {
+  my $norm = !$p->{humans};
+  if ($norm) {
 	  $countCol = 5;
-	  $ccn = qq'normaliseret til antal fuldt betalende medlemmer, så medlemsskaber med studie rabat tæller halvt. <a href="https://hal.osaa.dk/hal/status/member-count">Skift</a>';
+	  $ccn = qq'normaliseret til antal fuldt betalende medlemmer, så medlemsskaber med studie rabat tæller halvt. <a href="https://hal.osaa.dk/hal/status/member-count?humans=1">Skift</a>';
   } else {
 	  $countCol = 1;
-	  $ccn = qq'ikke normaliseret, så medlemsskaber med studie rabat tæller lige meget.  <a href="https://hal.osaa.dk/hal/status/member-count?norm=1">Skift til normaliseret</a>';
+	  $ccn = qq'ikke normaliseret, så medlemsskaber med studie rabat tæller lige meget.  <a href="https://hal.osaa.dk/hal/status/member-count?humans=0">Skift til normaliseret</a>';
   }
   
   my $mid  = join ',', map {$_->[$countCol]} @table;    

@@ -165,13 +165,28 @@ sub evalPage {
   }
   $oq->finish;
 
+  return outputGoto('/hal/lokaler/result?fresh=1') if $p->{store} && !$error;      
+
   if ($error) {
       $error = "<p><strong>Svaret blev ikke gemt: </strong>$error</p>";
   }
   
   my $table = table(@table);
 
-  my $content = qq'
+  my $poke = "";
+  if ($p->{missing}) {
+      if (%old) {
+	  if ($p->{missing} == 1) {
+	      $poke = "<p><strong>Hov!</strong> Der er kommet en ny valgmulighed, fortæl os hvad du synes om den, du kan se resultatet når du har svaret.</p>";
+	  } else {
+	      $poke = "<p><strong>Hov!</strong> Der er kommet $p->{missing} nye valgmuligheder, fortæl os hvad du synes om dem, du kan se resultatet når du har svaret.</p>";
+	  }
+      } else {
+	  $poke = "<p><strong>Hov!</strong> Det ser ud til at du mangler at svare på undersøgelsen, du kan se resultatet når du har svaret.</p>";
+      }
+  }
+  
+  my $content = qq'$poke
 <p>
 Dette er <a target="masterplan" href="http://osaa.dk/wiki/index.php/Lokaler2020MasterPlan">de mest konkrete muligheder</a> der lige nu er for nye lokaler til OSAA, det kan ske at der i fremtiden kommer flere, det kan også ske at der bliver fjernet muligheder fra listen.
 </p>
@@ -200,7 +215,7 @@ $error
 
 
 BEGIN {
-	ensureLogin(qr'^/hal/lokaler');
+    ensureLogin(qr'^/hal/lokaler');
     ensureAdmin(qr'^/hal/lokaler/admin');
     addHandler(qr'^/hal/lokaler/admin$', \&adminPage);
     addHandler(qr'^/hal/lokaler/eval$', \&evalPage);
