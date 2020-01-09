@@ -206,7 +206,7 @@ Flytningen til nye lokaler vil være til afstemning på generalforsamlingen, som
 $table
 <br>
 $error
-      <input type="submit" name="store" value="Gem">
+      <input type="submit" name="store" value="Gem og se resulater">
 
 </form>';
 
