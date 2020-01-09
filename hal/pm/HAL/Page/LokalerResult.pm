@@ -151,6 +151,8 @@ sub resultPage {
   $content .= qq'<p>Du kan til en hver tid <a href="/hal/lokaler/eval">opdatere dine svar</a>.</p>';
 
   
+  $content .= qq'<h2>Budget som funktion af kontingent</h2>
+<p>Denne graf viser det månedlige budget som en funktion af kontingent satsen i kr.</p>';
   my %point;
   for my $o (keys %$answers) {
       for my $p (keys %{$answers->{$o}}) {
