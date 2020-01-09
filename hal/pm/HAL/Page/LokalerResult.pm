@@ -71,9 +71,9 @@ sub loadOptions {
   
     my $missing=0;
     my %options;
-    my $oq = db->sql("select id, title, uri, description from space_option order by title");
+    my $oq = db->sql("select id, title, uri, description, budget from space_option order by title");
     my $error;
-    while (my ($id, $title, $uri, $description) = $oq->fetchrow_array) {
+    while (my ($id, $title, $uri, $description, $budget) = $oq->fetchrow_array) {
 	my $o = $own->{$id};
 	$missing++ unless $o;
 	$options{$id} = {
@@ -82,6 +82,7 @@ sub loadOptions {
 	    uri=>$uri,
 	    desciption=>$description,
 	    own=>$o,
+	    budget=>$budget,
 	};
     }
     $oq->finish;
@@ -98,7 +99,7 @@ sub optionToColor {
 }
 
 sub datasetForOption {
-    my ($option, $answers, $members) = @_;
+    my ($option, $answers, $members, $percent) = @_;
 
     my $color = optionToColor($option);
 
@@ -111,6 +112,8 @@ sub datasetForOption {
 	    $budget += @$a * $points;
 	}
 
+	$budget = int((100*$budget)/$option->{budget}) if $percent;
+	
 	push @answers, "   { x:$points, y:$budget }";	
     }
 
@@ -148,34 +151,32 @@ sub resultPage {
 
   $content .= qq'<p>Totalt har vi fået svar fra $membersWithAnAnswer medlemmer, til sammenligning er der <a href="/hal/status/member-count?humans=1">$paying betalende medlemmer</a>.</p>';
 
-  $content .= qq'<p>Du kan til en hver tid <a href="/hal/lokaler/eval">opdatere dine svar</a>.</p>';
-
-  
-  $content .= qq'<h2>Budget som funktion af kontingent</h2>
-<p>Denne graf viser det månedlige budget som en funktion af kontingent satsen i kr.</p>';
-  my %point;
-  for my $o (keys %$answers) {
-      for my $p (keys %{$answers->{$o}}) {
-	  $point{$p}++;
-      }
-  }
-  
-  my $labels = join ',', sort { $a <=> $b } keys %point;
+  $content .= qq'<p>Du kan til enhver tid <a href="/hal/lokaler/eval">opdatere dine svar</a>.</p>';
 
   my $datasets = join ',', map {
-      datasetForOption($_, $answers->{$_->{id}}, $members);
+      datasetForOption($_, $answers->{$_->{id}}, $members, 0);
+  } @options;
+
+  $content .= qq'';
+  
+  my $datasets2 = join ',', map {
+      datasetForOption($_, $answers->{$_->{id}}, $members, 1);
   } @options;
 
   
-  $content .= qq!<div class="chart-container" style="position: relative; height:40vh; width:80vw">
-    <canvas id="chart"></canvas>
-  </div>
+  $content .= qq!
+  <h2>Budget som funktion af kontingent</h2>
+  <p>Denne graf viser det månedlige budget som en funktion af kontingentsatsen i kr.</p>
+  <canvas id="chart"></canvas>
+
+  <h2>Procent af breakeven som funktion af kontingent</h2>
+  <p>Denne graf viser hvor mange procent af budgettet for hvert space der er dækket som en funktion af kontingentsatsen i kr.</p>
+  <canvas id="chart2"></canvas>
 
 <script>
 var ctx = document.getElementById('chart').getContext('2d');
 var myChart = new Chart(ctx, {
     type: 'scatter',
-    labels: [$labels],
     data: {
         datasets: [ 
 	   $datasets]
@@ -201,6 +202,36 @@ var myChart = new Chart(ctx, {
         }
     }
 });
+
+var ctx2 = document.getElementById('chart2').getContext('2d');
+var myChart2 = new Chart(ctx2, {
+    type: 'scatter',
+    data: {
+        datasets: [ 
+	   $datasets2]
+    },
+    options: {
+        scales: {
+            yAxes: [{
+                scaleLabel: {
+                    display: true,
+		    labelString: '% af budget',
+                },
+                ticks: {
+                    beginAtZero: true
+                }
+            }],
+            xAxes: [{
+                scaleLabel: {
+                    display: true,
+		    labelString: 'Kontingent',
+                }
+            }]
+
+        }
+    }
+});
+
 </script>
 
 <div style="min-height: 500px">

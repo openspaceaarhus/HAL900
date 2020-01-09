@@ -224,3 +224,13 @@ CREATE TRIGGER update_updated BEFORE UPDATE
         update_updated();
 commit;
 
+
+begin;
+alter table space_option add column budget int not null default 12000;
+commit;
+
+begin;
+update space_option set budget=313*450/12 where id=1;
+update space_option set budget=313*225/12 where id=2;
+
+commit;
