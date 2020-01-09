@@ -148,6 +148,9 @@ sub resultPage {
 
   $content .= qq'<p>Totalt har vi fået svar fra $membersWithAnAnswer medlemmer, til sammenligning er der <a href="/hal/status/member-count?humans=1">$paying betalende medlemmer</a>.</p>';
 
+  $content .= qq'<p>Du kan til en hver tid <a href="/hal/lokaler/eval">opdatere dine svar</a>.</p>';
+
+  
   my %point;
   for my $o (keys %$answers) {
       for my $p (keys %{$answers->{$o}}) {
