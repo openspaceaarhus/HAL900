@@ -106,15 +106,15 @@ sub datasetForOption {
     my @answers = ();    
     for my $points (sort {$a <=> $b} keys %$answers) {
 
-	my $budget = 0;
-	for my $bp (grep {$_ >= $points} keys %$answers) {
-	    my $a = $answers->{$bp};
-	    $budget += @$a * $points;
-	}
+		my $budget = 0;
+		for my $bp (grep {$_ >= $points} keys %$answers) {
+			my $a = $answers->{$bp};
+			$budget += @$a * $points;
+		}
 
-	$budget = int((100*$budget)/$option->{budget}) if $percent;
-	
-	push @answers, "   { x:$points, y:$budget }";	
+		$budget = int((100*$budget)/$option->{budget}) if $percent;
+		
+		push @answers, "   { x:$points, y:$budget }";	
     }
 
     

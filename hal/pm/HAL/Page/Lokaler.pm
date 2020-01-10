@@ -191,7 +191,7 @@ sub evalPage {
 Dette er <a target="masterplan" href="http://osaa.dk/wiki/index.php/Lokaler2020MasterPlan">de mest konkrete muligheder</a> der lige nu er for nye lokaler til OSAA, det kan ske at der i fremtiden kommer flere, det kan også ske at der bliver fjernet muligheder fra listen.
 </p>
 <p>
-Flølg linket i Kolonnen med Navn for at se en beskrivelse af hver mulighed.
+Følg linket i Kolonnen med Navn for at se en beskrivelse af hver mulighed.
 </p>
 <p>
 Du bedes nøje overveje hver mulighed og fortælle os hvor meget du vil betale i kontingent per måned for at være medlem, samt evt. en kommentar. Som rettesnor så er et kontingent på 215 kr det samme som vi startede med på KBV105.
