@@ -15,15 +15,14 @@ my $target = "$root/local/$fn";
 system("pg_dump", '--format=c', '--username=hal', 'hal', "--file=$target")
         and die "Failed to back up $target";
 
-exit 0; # TODO: Enable remote backup again.
 
 mkdir "$root/remote";
 my $enc = "$root/remote/$fn.gpg";
 
-system("gpg --yes --output $enc -s -e -u HAL900 -r helle\@daimi.au.dk -r ff\@nrvissing.net -r jacob\@rotand.dk $target")
+system("gpg --yes --output $enc -s -e -u HAL900 -r black\@blackthorne.dk -r dren.dk\@gmail.com $target")
     and die "Failed to encrypt $target to $enc";
 
-system("rsync -a $root/remote osaa.dk:backups")
-    and die "Failed to sync the $root/remote dir to osaa.dk:backups";
+system("rsync -a $root/remote mimer:backups")
+    and warn "Failed to sync the $root/remote dir to mimer";
 
 exit 0;
