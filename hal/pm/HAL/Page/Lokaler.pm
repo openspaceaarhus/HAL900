@@ -15,21 +15,6 @@ use HAL::Util;
 use HAL::Email;
 use HAL::Layout;
 
-sub table {
-    my @table = @_;
-
-    my $head = shift @table;
-    my $html = '<tr>'.join("", map {"<th>$_</th>"} @$head)."</tr>\n";
-    
-    my $i = 0;
-    for my $row (@table) {
-	my $class = ($i++ & 1) ? 'class="odd"' : 'class="even"';
-	$html .= "<tr $class>".join("", map {"<td>$_</td>"} @$row)."</tr>\n";
-    }
-
-    return qq'<table>$html</table>\n';
-}
-
 sub adminPage { 
   my ($r,$q,$p) = @_;
   

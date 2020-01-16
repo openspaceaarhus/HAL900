@@ -15,6 +15,7 @@ use HAL::Util;
 use HAL::Email;
 use HAL::Layout;
 use Digest::MD5 qw(md5_hex);
+use HTML::Entities;
 
 sub loadAllMembers() {
 
@@ -106,15 +107,15 @@ sub datasetForOption {
     my @answers = ();    
     for my $points (sort {$a <=> $b} keys %$answers) {
 
-		my $budget = 0;
-		for my $bp (grep {$_ >= $points} keys %$answers) {
-			my $a = $answers->{$bp};
-			$budget += @$a * $points;
-		}
-
-		$budget = int((100*$budget)/$option->{budget}) if $percent;
-		
-		push @answers, "   { x:$points, y:$budget }";	
+	my $budget = 0;
+	for my $bp (grep {$_ >= $points} keys %$answers) {
+	    my $a = $answers->{$bp};
+	    $budget += @$a * $points;
+	}
+	
+	$budget = int((100*$budget)/$option->{budget}) if $percent;
+	
+	push @answers, "   { x:$points, y:$budget }";	
     }
 
     
@@ -163,6 +164,39 @@ sub resultPage {
       datasetForOption($_, $answers->{$_->{id}}, $members, 1);
   } @options;
 
+
+  my $comments = '';
+  for my $o (@options) {
+
+      my $ans = $answers->{$o->{id}} // {};
+      if (%$ans) {
+
+	  my @table = (["Kontingent", "Kommentarer"]);
+	  for my $points (sort {$a <=> $b} keys %$ans) {
+	      my @cmts;
+	      for my $ac (@{$ans->{$points}}) {
+		  if ($ac->{comment}) {
+		      push @cmts, $ac->{comment};
+		  }
+	      }
+
+	      if (@cmts) {
+		  my $cmts;
+		  if (@cmts == 1) {
+		      $cmts = $cmts[0];
+		  } else {
+		      $cmts = join '', map {"<p>".encode_entities($_)."</p>\n"} @cmts;
+		  }
+		  
+		  push @table, [$points, $cmts];
+	      }
+	  } 
+
+	  $comments .= "<h2>Kommentarer om $o->{title}</h2>";
+	  $comments .= table(@table);
+      }
+  }
+  
   
   $content .= qq!
   <h2>Budget som funktion af kontingent</h2>
@@ -234,8 +268,7 @@ var myChart2 = new Chart(ctx2, {
 
 </script>
 
-<div style="min-height: 500px">
-</div>
+$comments
     !;
 
 

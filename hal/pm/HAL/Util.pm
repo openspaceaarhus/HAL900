@@ -2,7 +2,7 @@
 package HAL::Util;
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify passwordVerifyWithUpgrade shabbyPassword);
+@EXPORT = qw(escape_url unescape_url encode_hidden randomdigits randomstring passwordHash passwordVerify passwordVerifyWithUpgrade shabbyPassword table);
 
 use strict;
 use warnings;
@@ -169,6 +169,22 @@ sub passwordVerifyWithUpgrade {
 
     return $ok;
 }
+
+sub table {
+    my @table = @_;
+
+    my $head = shift @table;
+    my $html = '<tr>'.join("", map {"<th>$_</th>"} @$head)."</tr>\n";
+    
+    my $i = 0;
+    for my $row (@table) {
+	my $class = ($i++ & 1) ? 'class="odd"' : 'class="even"';
+	$html .= "<tr $class>".join("", map {"<td>$_</td>"} @$row)."</tr>\n";
+    }
+
+    return qq'<table>$html</table>\n';
+}
+
 
 1;
 
