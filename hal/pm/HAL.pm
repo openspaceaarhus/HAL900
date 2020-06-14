@@ -96,12 +96,13 @@ sub configureHAL {
 	    test=>1,
 	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
 	},
-	
-	docker=>dockerConfig()
-
     );
-    
-    $config = $CONFIG{$host} || die "HOST=$host is not found in \%CONFIG, cannot self-configure, fix pm/HAL.pm";
+    	
+    if ($host eq 'docker') {
+	$config = dockerConfig();
+    } else {
+	$config = $CONFIG{$host} || die "HOST=$host is not found in \%CONFIG, cannot self-configure, fix pm/HAL.pm";
+    }
 
     my $sf = "$config->{root}/.hal/web-salt.txt";
     unless (-f $sf) {

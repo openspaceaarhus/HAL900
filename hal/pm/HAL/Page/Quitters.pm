@@ -39,6 +39,15 @@ sub quitters {
     }
     $res->finish;
 
+    # Users who have downgraded, but still in possession of a door bit:
+    my $hot = db->sql("select updated, id from member where dooraccess and membertype_id=2") 
+	or die "Failed to get list of deleted rfids";
+
+    while (my ($created, $memberId) = $hot->fetchrow_array) {
+	$deletedRfid{$memberId} = $created;
+    }
+    $hot->finish;
+    
     my @quitters;
     for my $id (keys %deletedRfid) {
 	my $mr = db->sql("select m.created, username, realname, email, membertype_id, m.dooraccess, membertype 
@@ -68,10 +77,15 @@ sub quitters {
     my $count = 0;
     for my $q (@quitters) {
 	my $class = ($count++ & 1) ? 'class="odd"' : 'class="even"';
+
+	my $join = $q->{created};
+	$join =~ s/\.\d+$//;
+	my $quit = $q->{quit};
+	$quit =~ s/\.\d+$//;
 	
 	$html .= qq'<tr $class>
-	    <td>$q->{quit}</td>
-	    <td>$q->{created}</td>
+	    <td>$quit</td>
+	    <td>$join</td>
 	    <td><a href="/hal/admin/members/$q->{id}">$q->{username}</a></td>
 	    <td>$q->{realname}</td>
 	    <td>$q->{email}</td>
