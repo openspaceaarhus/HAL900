@@ -138,6 +138,8 @@ sub indexPage {
     $html .= qq'<p><a href="/hal/admin/load">Load nye poster fra Nordea</a></p>';
     $html .= qq'<p><a href="/hal/admin/consolidate">Konsolider nye poster med systemet</a></p>';
     $html .= qq'<p><a href="/hal/admin/rain">Make it rain</a></p>';
+    $html .= qq'<p><a href="/hal/admin/quitters">Nedgraderinger det sidste aar</A></p>';
+    $html .= qq'<p><a href="/hal/admin/quitters?days=30">Nedgraderinger den sidste maaned</A></p>';
 
     return outputAdminPage('index', 'Admin oversigt', $html);
 }
