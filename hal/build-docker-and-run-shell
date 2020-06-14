@@ -1,3 +1,6 @@
 #!/bin/sh
 
-sudo docker build -t hal:test . && sudo docker run -it --rm hal:test /bin/bash    
+sudo docker build -t hal:test . && sudo docker run -it -v `pwd`/docker/logs:/var/log/apache2 --rm hal:test $@
+#sudo docker build -t hal:test . && sudo docker run -it --rm hal:test /bin/bash
+
+

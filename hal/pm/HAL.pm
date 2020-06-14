@@ -23,6 +23,26 @@ sub getDBUrl() {
     return $config->{db};
 }
 
+sub dockerPg() {
+
+    my %e;
+    open E, "/home/hal/hal/config/docker.env" or die "Missing /home/hal/hal/config/docker.env: $!";
+    while (my $line = <E>) {
+	chomp $line;
+	my ($k, $v) = split /=/, $line;
+	$e{$k} = $v;
+    }
+    close E;
+    
+    my $host = $e{PGHOST} or die "Missing PGHOST";
+    my $port = $e{PGPORT} or die "Missing PGPORT";
+    my $db = $e{PGDATABASE} or die "Missing PGDATABASE";
+    my $user = $e{PGUSER} or die "Missing PGUSER";
+    my $pass = $e{PGPASSWORD} or die "Missing password PGPASSWORD";
+    
+    return  "dbi:Pg:host=$host;port=$port;dbname=$db;user=$user;password=$pass";
+}
+
 sub configureHAL {
     my $host = shift;
 
@@ -64,7 +84,7 @@ sub configureHAL {
 	docker=>{
 	    root=>"/home/hal/hal",
 	    test=>1,
-	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
+	    db=>dockerPg(),
 	},
 
     );

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+env > /home/hal/hal/config/docker.env
+
 cron -l
 
 exec apachectl -D FOREGROUND -k start
