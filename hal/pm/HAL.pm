@@ -2,7 +2,7 @@
 package HAL;
 require Exporter;
 @ISA=qw(Exporter);
-@EXPORT = qw(testMode HALRoot emailSalt getDBUrl configureHAL);
+@EXPORT = qw(testMode HALRoot emailSalt getDBUrl configureHAL getDBUser getDBPassword);
 
 use strict;
 use warnings;
@@ -23,7 +23,16 @@ sub getDBUrl() {
     return $config->{db};
 }
 
-sub dockerPg() {
+sub getDBUser {
+    return $config->{dbuser} || 'hal';
+}
+
+sub getDBPassword {
+    return $config->{dbPassword} ||'hal900';
+} 
+
+# Configure the system from docker conventions
+sub dockerConfig() {
 
     my %e;
     open E, "/home/hal/hal/config/docker.env" or die "Missing /home/hal/hal/config/docker.env: $!";
@@ -39,8 +48,14 @@ sub dockerPg() {
     my $db = $e{PGDATABASE} or die "Missing PGDATABASE";
     my $user = $e{PGUSER} or die "Missing PGUSER";
     my $pass = $e{PGPASSWORD} or die "Missing password PGPASSWORD";
-    
-    return  "dbi:Pg:host=$host;port=$port;dbname=$db;user=$user;password=$pass";
+
+    return {
+	root=>"/home/hal/hal",
+	test=>1,
+	dbUser=>$user,
+	dbPassword=>$pass,
+	db=>"dbi:Pg:host=$host;port=$port;dbname=$db",
+    };
 }
 
 sub configureHAL {
@@ -81,11 +96,8 @@ sub configureHAL {
 	    test=>1,
 	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
 	},
-	docker=>{
-	    root=>"/home/hal/hal",
-	    test=>1,
-	    db=>dockerPg(),
-	},
+	
+	docker=>dockerConfig()
 
     );
     

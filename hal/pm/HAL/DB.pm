@@ -48,8 +48,7 @@ sub dbh($) {
      
     $cachedLastUse = time;
     $cachedPid = $$;
-    return $cachedDbh = DBI->connect(getDBUrl(),
-				     'hal', 'hal900', {
+    return $cachedDbh = DBI->connect(getDBUrl(),  getDBUser(), getDBPassword(), {
 					 AutoCommit => $self->{autocommit},
 					 pg_enable_utf8=>1,
 					 autotest=>0,
