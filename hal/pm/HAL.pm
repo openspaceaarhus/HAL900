@@ -25,8 +25,13 @@ sub getDBUrl() {
 
 sub configureHAL {
     my $host = shift;
-    $host ||= `hostname`;
-    chomp $host;    
+
+    if (-f "/.dockerenv") {
+	$host ||= 'docker';
+    } else {
+	$host ||= `hostname`;
+	chomp $host;
+    }
 
     die "HOST environment variable not defined, cannot self-configure." unless $host;
 
@@ -53,6 +58,11 @@ sub configureHAL {
 	},
 	blade=>{
 	    root=>"/home/ff/projects/HAL900/hal",
+	    test=>1,
+	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
+	},
+	docker=>{
+	    root=>"/home/hal/hal",
 	    test=>1,
 	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
 	},

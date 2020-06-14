@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cron -l
+
+exec apachectl -D FOREGROUND -k start
+
