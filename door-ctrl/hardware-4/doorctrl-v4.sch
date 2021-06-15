@@ -1,51 +1,8 @@
-EESchema Schematic File Version 2  date 2011-03-21T20:05:08 CET
-LIBS:enc28j60
-LIBS:power
-LIBS:device
-LIBS:transistors
-LIBS:conn
-LIBS:regul
-LIBS:74xx
-LIBS:cmos4000
-LIBS:adc-dac
-LIBS:memory
-LIBS:xilinx
-LIBS:special
-LIBS:microcontrollers
-LIBS:dsp
-LIBS:microchip
-LIBS:analog_switches
-LIBS:motorola
-LIBS:texas
-LIBS:intel
-LIBS:audio
-LIBS:interface
-LIBS:digital-audio
-LIBS:philips
-LIBS:display
-LIBS:cypress
-LIBS:siliconi
-LIBS:opto
-LIBS:contrib
-LIBS:valves
-LIBS:bc807
-LIBS:bc817
-LIBS:amp-rj45-tap-up-with-leds
-LIBS:l4960
-LIBS:borniers
-LIBS:g5sb
-LIBS:pulse-pe-68517-ethernet-trafo
-LIBS:sn65hvd1x
-LIBS:i2c
-LIBS:linear
-LIBS:atmel
-LIBS:diode
-LIBS:npnpnp
-LIBS:mounting
-LIBS:doorctrl-v4-cache
-EELAYER 25  0
+EESchema Schematic File Version 4
+EELAYER 30 0
 EELAYER END
-$Descr A4 11700 8267
+$Descr A4 11693 8268
+encoding utf-8
 Sheet 1 6
 Title ""
 Date "21 mar 2011"
@@ -136,7 +93,7 @@ Wire Wire Line
 Wire Wire Line
 	3700 5425 3700 5350
 Wire Wire Line
-	3700 5350 3500 5350
+	3700 5350 3600 5350
 Wire Wire Line
 	3500 5350 3500 5425
 Wire Wire Line
@@ -187,7 +144,7 @@ Wire Wire Line
 	4900 6825 4900 6375
 Connection ~ 3950 6475
 Wire Wire Line
-	3950 6825 3950 6275
+	3950 6825 3950 6475
 Wire Wire Line
 	1775 3125 1775 3025
 Connection ~ 1050 1950
@@ -199,9 +156,7 @@ Wire Wire Line
 	1050 1550 1050 1950
 Connection ~ 1850 1950
 Wire Wire Line
-	1750 1950 2150 1950
-Connection ~ 2100 1950
-Connection ~ 2100 1150
+	1750 1950 1850 1950
 Wire Wire Line
 	4150 4550 4225 4550
 Wire Wire Line
@@ -263,7 +218,7 @@ Wire Wire Line
 Wire Wire Line
 	2900 4850 2900 4950
 Wire Wire Line
-	2900 4950 3200 4950
+	2900 4950 3000 4950
 Wire Wire Line
 	3200 4950 3200 4850
 Wire Wire Line
@@ -272,7 +227,7 @@ Connection ~ 3000 4950
 Wire Wire Line
 	2800 850  2800 775 
 Wire Wire Line
-	2800 775  3300 775 
+	2800 775  2900 775 
 Wire Wire Line
 	3300 775  3300 850 
 Wire Wire Line
@@ -382,9 +337,9 @@ Wire Wire Line
 	3500 6125 3500 5925
 Connection ~ 3500 6125
 Wire Wire Line
-	3850 6025 3275 6025
+	3850 6025 3700 6025
 Wire Wire Line
-	3275 6125 3850 6125
+	3275 6125 3500 6125
 Wire Wire Line
 	1225 3775 925  3775
 Text GLabel 1850 3775 2    60   Input ~ 0
@@ -406,40 +361,48 @@ PB7
 Text GLabel 925  2825 0    60   Input ~ 0
 PB6
 $Comp
-L +5V #PWR01
+L doorctrl-v4-rescue:+5V #PWR01
 U 1 1 4D1A0335
 P 3600 5300
 F 0 "#PWR01" H 3600 5390 20  0001 C CNN
 F 1 "+5V" H 3600 5390 30  0000 C CNN
+F 2 "" H 3600 5300 50  0001 C CNN
+F 3 "" H 3600 5300 50  0001 C CNN
 	1    3600 5300
 	1    0    0    -1  
 $EndComp
 $Comp
-L R R63
+L doorctrl-v4-rescue:R R63
 U 1 1 4D1A01F5
 P 3500 5675
 F 0 "R63" V 3580 5675 50  0000 C CNN
 F 1 "10k" V 3500 5675 50  0000 C CNN
+F 2 "" H 3500 5675 50  0001 C CNN
+F 3 "" H 3500 5675 50  0001 C CNN
 	1    3500 5675
 	1    0    0    -1  
 $EndComp
 $Comp
-L R R64
+L doorctrl-v4-rescue:R R64
 U 1 1 4D1A01EA
 P 3700 5675
 F 0 "R64" V 3780 5675 50  0000 C CNN
 F 1 "10k" V 3700 5675 50  0000 C CNN
+F 2 "" H 3700 5675 50  0001 C CNN
+F 3 "" H 3700 5675 50  0001 C CNN
 	1    3700 5675
 	1    0    0    -1  
 $EndComp
 Text Notes 1300 6625 0    60   ~ 0
 Extension header
 $Comp
-L CONN_5X2 CON10
+L doorctrl-v4-rescue:CONN_5X2 CON10
 U 1 1 4D173A4E
 P 1650 6225
 F 0 "CON10" H 1650 6525 60  0000 C CNN
 F 1 "5x2 header" V 1650 6225 50  0000 C CNN
+F 2 "" H 1650 6225 50  0001 C CNN
+F 3 "" H 1650 6225 50  0001 C CNN
 	1    1650 6225
 	1    0    0    -1  
 $EndComp
@@ -481,20 +444,24 @@ PD2
 Text GLabel 1100 4850 0    60   Input ~ 0
 PD3
 $Comp
-L GND #PWR02
+L doorctrl-v4-rescue:GND #PWR02
 U 1 1 4D0D1ABE
 P 1150 5400
 F 0 "#PWR02" H 1150 5400 30  0001 C CNN
 F 1 "GND" H 1150 5330 30  0001 C CNN
+F 2 "" H 1150 5400 50  0001 C CNN
+F 3 "" H 1150 5400 50  0001 C CNN
 	1    1150 5400
 	1    0    0    -1  
 $EndComp
 $Comp
-L CONN_6 CON9
+L doorctrl-v4-rescue:CONN_6 CON9
 U 1 1 4D0D19DC
 P 1650 5000
 F 0 "CON9" V 1600 5000 60  0000 C CNN
 F 1 "FTDI-serial" V 1700 5000 60  0000 C CNN
+F 2 "" H 1650 5000 50  0001 C CNN
+F 3 "" H 1650 5000 50  0001 C CNN
 	1    1650 5000
 	1    0    0    -1  
 $EndComp
@@ -611,11 +578,13 @@ PB6
 Text GLabel 9100 2250 0    60   Input ~ 0
 PB7
 $Comp
-L +5V #PWR03
+L doorctrl-v4-rescue:+5V #PWR03
 U 1 1 4D0BBC2E
 P 2150 2275
 F 0 "#PWR03" H 2150 2365 20  0001 C CNN
 F 1 "+5V" H 2150 2365 30  0000 C CNN
+F 2 "" H 2150 2275 50  0001 C CNN
+F 3 "" H 2150 2275 50  0001 C CNN
 	1    2150 2275
 	1    0    0    -1  
 $EndComp
@@ -624,47 +593,57 @@ PC0
 Text GLabel 3275 6025 0    60   Input ~ 0
 PC1
 $Comp
-L +5V #PWR04
+L doorctrl-v4-rescue:+5V #PWR04
 U 1 1 4D0BB852
 P 4450 5700
 F 0 "#PWR04" H 4450 5790 20  0001 C CNN
 F 1 "+5V" H 4450 5790 30  0000 C CNN
+F 2 "" H 4450 5700 50  0001 C CNN
+F 3 "" H 4450 5700 50  0001 C CNN
 	1    4450 5700
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR05
+L doorctrl-v4-rescue:GND #PWR05
 U 1 1 4D0BB830
 P 3950 6825
 F 0 "#PWR05" H 3950 6825 30  0001 C CNN
 F 1 "GND" H 3950 6755 30  0001 C CNN
+F 2 "" H 3950 6825 50  0001 C CNN
+F 3 "" H 3950 6825 50  0001 C CNN
 	1    3950 6825
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR06
+L doorctrl-v4-rescue:GND #PWR06
 U 1 1 4D0BB82C
 P 4450 6825
 F 0 "#PWR06" H 4450 6825 30  0001 C CNN
 F 1 "GND" H 4450 6755 30  0001 C CNN
+F 2 "" H 4450 6825 50  0001 C CNN
+F 3 "" H 4450 6825 50  0001 C CNN
 	1    4450 6825
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR07
+L doorctrl-v4-rescue:GND #PWR07
 U 1 1 4D0BB822
 P 4900 6825
 F 0 "#PWR07" H 4900 6825 30  0001 C CNN
 F 1 "GND" H 4900 6755 30  0001 C CNN
+F 2 "" H 4900 6825 50  0001 C CNN
+F 3 "" H 4900 6825 50  0001 C CNN
 	1    4900 6825
 	1    0    0    -1  
 $EndComp
 $Comp
-L 24LC64 U8
+L i2c:24LC64 U8
 U 1 1 4D0BB80A
 P 4450 6275
 F 0 "U8" H 4750 6475 60  0000 C CNN
 F 1 "24LC64" H 4900 6575 60  0000 C CNN
+F 2 "" H 4450 6275 50  0001 C CNN
+F 3 "" H 4450 6275 50  0001 C CNN
 	1    4450 6275
 	1    0    0    -1  
 $EndComp
@@ -679,56 +658,68 @@ F4 "TXENABLE" I L 9300 5525 60
 F5 "RX-LED" I L 9300 5700 60 
 $EndSheet
 $Comp
-L GND #PWR08
+L doorctrl-v4-rescue:GND #PWR08
 U 1 1 4D0BAF81
 P 1850 3575
 F 0 "#PWR08" H 1850 3575 30  0001 C CNN
 F 1 "GND" H 1850 3505 30  0001 C CNN
+F 2 "" H 1850 3575 50  0001 C CNN
+F 3 "" H 1850 3575 50  0001 C CNN
 	1    1850 3575
 	0    -1   -1   0   
 $EndComp
 $Comp
-L +5V #PWR09
+L doorctrl-v4-rescue:+5V #PWR09
 U 1 1 4D0BAF77
 P 1850 3675
 F 0 "#PWR09" H 1850 3765 20  0001 C CNN
 F 1 "+5V" H 1850 3765 30  0000 C CNN
+F 2 "" H 1850 3675 50  0001 C CNN
+F 3 "" H 1850 3675 50  0001 C CNN
 	1    1850 3675
 	0    1    1    0   
 $EndComp
 $Comp
-L GND #PWR010
+L doorctrl-v4-rescue:GND #PWR010
 U 1 1 4D0BAF62
 P 1850 4075
 F 0 "#PWR010" H 1850 4075 30  0001 C CNN
 F 1 "GND" H 1850 4005 30  0001 C CNN
+F 2 "" H 1850 4075 50  0001 C CNN
+F 3 "" H 1850 4075 50  0001 C CNN
 	1    1850 4075
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR011
+L doorctrl-v4-rescue:GND #PWR011
 U 1 1 4D0BAF4F
 P 1775 3125
 F 0 "#PWR011" H 1775 3125 30  0001 C CNN
 F 1 "GND" H 1775 3055 30  0001 C CNN
+F 2 "" H 1775 3125 50  0001 C CNN
+F 3 "" H 1775 3125 50  0001 C CNN
 	1    1775 3125
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR012
+L doorctrl-v4-rescue:+5V #PWR012
 U 1 1 4D0BAF48
 P 1775 2825
 F 0 "#PWR012" H 1775 2915 20  0001 C CNN
 F 1 "+5V" H 1775 2915 30  0000 C CNN
+F 2 "" H 1775 2825 50  0001 C CNN
+F 3 "" H 1775 2825 50  0001 C CNN
 	1    1775 2825
 	1    0    0    -1  
 $EndComp
 $Comp
-L +5V #PWR013
+L doorctrl-v4-rescue:+5V #PWR013
 U 1 1 4D0BAF41
 P 3125 675
 F 0 "#PWR013" H 3125 765 20  0001 C CNN
 F 1 "+5V" H 3125 765 30  0000 C CNN
+F 2 "" H 3125 675 50  0001 C CNN
+F 3 "" H 3125 675 50  0001 C CNN
 	1    3125 675 
 	1    0    0    -1  
 $EndComp
@@ -776,91 +767,130 @@ $EndSheet
 NoConn ~ 1475 3875
 NoConn ~ 1225 3875
 $Comp
-L GND #PWR014
+L doorctrl-v4-rescue:GND #PWR014
 U 1 1 4CFAB0A0
 P 1850 2475
 F 0 "#PWR014" H 1850 2475 30  0001 C CNN
 F 1 "GND" H 1850 2405 30  0001 C CNN
+F 2 "" H 1850 2475 50  0001 C CNN
+F 3 "" H 1850 2475 50  0001 C CNN
 	1    1850 2475
 	1    0    0    -1  
 $EndComp
 $Comp
-L GND #PWR015
+L doorctrl-v4-rescue:GND #PWR015
 U 1 1 4CFAB098
 P 1050 2475
 F 0 "#PWR015" H 1050 2475 30  0001 C CNN
 F 1 "GND" H 1050 2405 30  0001 C CNN
+F 2 "" H 1050 2475 50  0001 C CNN
+F 3 "" H 1050 2475 50  0001 C CNN
 	1    1050 2475
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C2
+L doorctrl-v4-rescue:C C2
 U 1 1 4CFAB04B
 P 1850 2150
 F 0 "C2" H 1900 2250 50  0000 L CNN
 F 1 "15pF" H 1900 2050 50  0000 L CNN
+F 2 "" H 1850 2150 50  0001 C CNN
+F 3 "" H 1850 2150 50  0001 C CNN
 	1    1850 2150
 	1    0    0    -1  
 $EndComp
 $Comp
-L C C1
+L doorctrl-v4-rescue:C C1
 U 1 1 4CFAB038
 P 1050 2150
 F 0 "C1" H 1100 2250 50  0000 L CNN
 F 1 "15pF" H 1100 2050 50  0000 L CNN
+F 2 "" H 1050 2150 50  0001 C CNN
+F 3 "" H 1050 2150 50  0001 C CNN
 	1    1050 2150
 	1    0    0    -1  
 $EndComp
 $Comp
-L CRYSTAL X1
+L doorctrl-v4-rescue:CRYSTAL X1
 U 1 1 4CFAAFBA
 P 1450 1950
 F 0 "X1" H 1450 2100 60  0000 C CNN
 F 1 "20MHz" H 1450 1800 60  0000 C CNN
+F 2 "" H 1450 1950 50  0001 C CNN
+F 3 "" H 1450 1950 50  0001 C CNN
 	1    1450 1950
 	-1   0    0    1   
 $EndComp
 Text Label 2100 1150 2    60   ~ 0
 RESET
 $Comp
-L ATMEGA324P-A IC1
+L doorctrl-v4-rescue:ATMEGA324P-A IC1
 U 1 1 4CF6BD02
 P 3150 2850
 F 0 "IC1" H 2350 4680 50  0000 L BNN
 F 1 "ATMEGA324P-A" H 3350 950 50  0000 L BNN
 F 2 "TQFP44" H 2500 1000 50  0001 C CNN
+F 3 "" H 3150 2850 50  0001 C CNN
 	1    3150 2850
 	1    0    0    -1  
 $EndComp
 Text Label 1850 3975 0    60   ~ 0
 gnd
 $Comp
-L GND #PWR016
+L doorctrl-v4-rescue:GND #PWR016
 U 1 1 4CF6BFD7
 P 3050 5075
 F 0 "#PWR016" H 3050 5075 30  0001 C CNN
 F 1 "GND" H 3050 5005 30  0001 C CNN
+F 2 "" H 3050 5075 50  0001 C CNN
+F 3 "" H 3050 5075 50  0001 C CNN
 	1    3050 5075
 	1    0    0    -1  
 $EndComp
 $Comp
-L AVR-JTAG-10 CON2
+L doorctrl-v4-rescue:AVR-JTAG-10 CON2
 U 1 1 4CF6BD20
 P 1425 3775
 F 0 "CON2" H 1255 4105 50  0000 C CNN
 F 1 "JTAG" H 1085 3445 50  0000 L BNN
 F 2 "AVR-JTAG-10" V 855 3795 50  0001 C CNN
+F 3 "" H 1425 3775 50  0001 C CNN
 	1    1425 3775
 	1    0    0    -1  
 $EndComp
 $Comp
-L AVR-ISP-6 CON1
+L doorctrl-v4-rescue:AVR-ISP-6 CON1
 U 1 1 4CF6BD17
 P 1350 2925
 F 0 "CON1" H 1270 3165 50  0000 C CNN
 F 1 "ISP" H 1110 2695 50  0000 L BNN
 F 2 "AVR-ISP-6" V 830 2965 50  0001 C CNN
+F 3 "" H 1350 2925 50  0001 C CNN
 	1    1350 2925
 	1    0    0    -1  
 $EndComp
+Wire Wire Line
+	3700 6025 3275 6025
+Wire Wire Line
+	3950 6475 3950 6375
+Wire Wire Line
+	3125 775  3300 775 
+Wire Wire Line
+	2900 775  3000 775 
+Wire Wire Line
+	3050 4950 3100 4950
+Wire Wire Line
+	3100 4950 3200 4950
+Wire Wire Line
+	3000 4950 3050 4950
+Wire Wire Line
+	3000 775  3125 775 
+Wire Wire Line
+	3950 6375 3950 6275
+Wire Wire Line
+	3600 5350 3500 5350
+Wire Wire Line
+	3500 6125 3850 6125
+Wire Wire Line
+	1850 1950 2150 1950
 $EndSCHEMATC
