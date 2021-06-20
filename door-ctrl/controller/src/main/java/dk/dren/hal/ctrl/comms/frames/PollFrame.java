@@ -9,6 +9,6 @@ public class PollFrame {
         final ByteBuffer payload = new ByteBuffer(1);
         payload.add((byte)lastEventSeen);
 
-        return new Frame((byte)0xff, (byte)targetId, (byte)0x00, payload);
+        return new Frame((byte)0x00, (byte)targetId, (byte)0x00, payload);
     }
 }

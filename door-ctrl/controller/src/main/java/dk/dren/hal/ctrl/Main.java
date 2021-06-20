@@ -21,7 +21,7 @@ public class Main {
             while (true) {
                 final Frame frame = PollFrame.create(0xff, 0x00);
                 rs485.send(frame);
-                Thread.sleep(100);
+                Thread.sleep(1000);
                 if (loop++ > 100) {
                     log.info("Polling...");
                     loop = 0;

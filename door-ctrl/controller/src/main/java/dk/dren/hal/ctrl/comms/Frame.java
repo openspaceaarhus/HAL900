@@ -2,6 +2,7 @@ package dk.dren.hal.ctrl.comms;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 
 import java.util.function.Supplier;
 import java.util.zip.CRC32;
@@ -20,6 +21,7 @@ import java.util.zip.CRC32;
  * | 4      | CRC32 of all previous bytes, except for the start-of-message byte
  * | 1      | End of message, always 0xf1 |
  */
+@Log
 @Getter
 @RequiredArgsConstructor
 public class Frame {
@@ -61,12 +63,15 @@ public class Frame {
         }
 
         final int crc32Index = getCrc32Index((byte) payloadSize);
+
         CRC32 crc32 = new CRC32();
         for (int i = START_SENTINEL_INDEX +1; i < crc32Index; i++) {
             crc32.update(transmitBuffer[i]);
         }
         final long crc32value = crc32.getValue();
-        transmitBuffer[crc32Index]   = (byte)(crc32value & 0xff);
+
+        //log.info(()->String.format("crc: %x", crc32value));
+        transmitBuffer[crc32Index+0] = (byte)(crc32value & 0xff);
         transmitBuffer[crc32Index+1] = (byte)((crc32value>>8) & 0xff);
         transmitBuffer[crc32Index+2] = (byte)((crc32value>>16) & 0xff);
         transmitBuffer[crc32Index+3] = (byte)((crc32value>>24) & 0xff);
@@ -76,28 +81,44 @@ public class Frame {
         return MINIMUM_BYTES_IN_FRAME +payloadSize;
     }
 
-
-  /*
-    public Payload parsePayload() {
-        final PayloadTypeDescription description = getDescription();
-        if (description == null) {
-            throw new IllegalArgumentException(String.format("Unknown message type: %02x", type));
+    private long ccittCrc32(byte[] bytes, int firstIndex, int lastIndex) {
+        long crc = 0xffffffff;
+        for (int i=firstIndex; i<lastIndex; i++) {
+            byte b = bytes[i];
+            crc = crc ^ b;
+            for (int j=0; j<8; j++) {
+                if ((crc & 1) != 0) {
+                    crc = (crc>>1) ^ 0xEDB88320;
+                } else {
+                    crc = crc >>1;
+                }
+            }
         }
-        if (description.getParser() == null) {
-            throw new IllegalArgumentException("No parser for "+description);
-        }
-        return description.getParser().apply(this);
+        return crc;
     }
 
-    public <T extends Payload> T parsePayload(Class<T> theClass) {
-        final Payload payload = parsePayload();
-        if (theClass.isAssignableFrom(payload.getClass())) {
-            return (T)payload;
-        } else {
-            throw new IllegalArgumentException("Wrong type "+payload.getClass()+" is not "+theClass);
-        }
-    }
-*/
+
+    /*
+      public Payload parsePayload() {
+          final PayloadTypeDescription description = getDescription();
+          if (description == null) {
+              throw new IllegalArgumentException(String.format("Unknown message type: %02x", type));
+          }
+          if (description.getParser() == null) {
+              throw new IllegalArgumentException("No parser for "+description);
+          }
+          return description.getParser().apply(this);
+      }
+
+      public <T extends Payload> T parsePayload(Class<T> theClass) {
+          final Payload payload = parsePayload();
+          if (theClass.isAssignableFrom(payload.getClass())) {
+              return (T)payload;
+          } else {
+              throw new IllegalArgumentException("Wrong type "+payload.getClass()+" is not "+theClass);
+          }
+      }
+  */
     @Override
     public String toString() {
         return String.format("Frame: src:%02x, tgt:%02x, type:%02x (%s), payload:%s",
