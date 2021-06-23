@@ -11,14 +11,17 @@
 
 #include "board.h"
 #include "rs485.h"
+#include "frame.h"
+#include "random.h"
 
    
 int main(void) {
   wdt_enable(WDTO_4S);
   uartInit();
   L("Booting");
+  frameInit();
   rs485Init();
-  
+  randomInit();
   
 /*
   aes256cbcInit(AES_KEY, IV);
@@ -33,7 +36,7 @@ int main(void) {
   
   while (1) {
     wdt_reset();
-    _delay_ms(100);
-    P("Frames: %d\r\n", rs485RxCount());
+    _delay_ms(1000);
+    P(" Frames: %d\r\n", frameRxCount());
   }
 }

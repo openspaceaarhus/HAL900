@@ -74,8 +74,6 @@ Payload: 4 bytes.
 
 The payload contains 4 random bytes, this is used to guard against collisions as any conflicts will cause the CRC to not match.
 
-The 4 random bytes are chosen as the first 4 bytes of the AES key that the server responds with, this allows the device to ignore responses that are not meant for itself.
-
 When the controller sees an enrollment request it picks a new device id and a device specific AES key, it then responds with an enrollment response message.
 
 
@@ -83,9 +81,15 @@ When the controller sees an enrollment request it picks a new device id and a de
 
 Sent by the controller.
 
-The target id is set to the new device id and the payload is the device-specific AES key.
+The target id is set to 0xff and the payload contains:
+
+* The 4 random bytes from the request
+* The node ID
+* The 32 bytes of the AES key.
 
 The device stores the device id and the AES key in its EEPROM and awaits a poll on its new ID.
+
+This message is repeated until the device answers
 
 
 ## Poll acknowlege: 0x03

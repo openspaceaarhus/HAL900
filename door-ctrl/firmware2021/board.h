@@ -28,3 +28,5 @@
 #define PORT_2_3 PA6
 #define PORT_2_6 PA7
 
+// PA4 is used for noise inputs
+#define NOISE_ADC 4

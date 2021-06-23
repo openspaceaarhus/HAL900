@@ -36,6 +36,11 @@ public class Frame {
     public static final int PAYLOAD_INDEX = 5;
     public static final int CRC32_SIZE = 4;
 
+    public static final int MT_ENROLL_RESPONSE = 0x02;
+    public static final int MT_POLL_ACK = 0x03;
+    public static final int MT_POLL_RESPONSE = 0x04;
+
+
     private final byte sourceId;
     private final byte targetId;
     private final byte type;
@@ -81,23 +86,6 @@ public class Frame {
         return MINIMUM_BYTES_IN_FRAME +payloadSize;
     }
 
-    private long ccittCrc32(byte[] bytes, int firstIndex, int lastIndex) {
-        long crc = 0xffffffff;
-        for (int i=firstIndex; i<lastIndex; i++) {
-            byte b = bytes[i];
-            crc = crc ^ b;
-            for (int j=0; j<8; j++) {
-                if ((crc & 1) != 0) {
-                    crc = (crc>>1) ^ 0xEDB88320;
-                } else {
-                    crc = crc >>1;
-                }
-            }
-        }
-        return crc;
-    }
-
-
     /*
       public Payload parsePayload() {
           final PayloadTypeDescription description = getDescription();
@@ -121,11 +109,15 @@ public class Frame {
   */
     @Override
     public String toString() {
-        return String.format("Frame: src:%02x, tgt:%02x, type:%02x (%s), payload:%s",
+        return String.format("Frame: src:%02x, tgt:%02x, type:%02x, payload:%s",
                 sourceId, targetId, type, arrayToString());
     }
 
     private String arrayToString() {
+        if (payload.isEmpty()) {
+            return "Empty";
+        }
+
         StringBuilder sb = new StringBuilder();
 
         sb.append(String.format("%d bytes:", payload.size()));

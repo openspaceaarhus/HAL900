@@ -3,6 +3,7 @@ package dk.dren.hal.ctrl.comms;
 import lombok.extern.java.Log;
 
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.zip.CRC32;
 
 /**
@@ -86,6 +87,8 @@ public class Deframer {
             return;
         }
 
+        log.fine(()->logBytes(buffer, Frame.START_SENTINEL_INDEX, endSentinelIndex));
+
         final int crc32Index = Frame.getCrc32Index(payloadSize);
         final long crc32FromFrame = read32bitLittleEndian(buffer, crc32Index);
         CRC32 crc32 = new CRC32();
@@ -93,7 +96,8 @@ public class Deframer {
             crc32.update(buffer.get(i));
         }
         if (crc32FromFrame != crc32.getValue()) {
-            log.fine(()->"Bad crc: "+crc32FromFrame+" != "+crc32.getValue());
+            log.info(()->String.format("Bad crc: %08x vs %08x",
+                    crc32FromFrame, crc32.getValue()));
             buffer.remove(); // Just skip the start sentinel, because the crc didn't match, so we might just be out of sync
             tryParse(); // Retry without the false start sentinel.
             return;
@@ -106,7 +110,12 @@ public class Deframer {
         final byte messageType = buffer.get(Frame.MESSAGE_TYPE_INDEX);
         final ByteBuffer payload = buffer.copy(Frame.PAYLOAD_INDEX, payloadSize);
 
-        frameConsumer.accept(new Frame(sourceId, targetId, messageType, payload));
+        final Frame frame = new Frame(sourceId, targetId, messageType, payload);
+        try {
+            frameConsumer.accept(frame);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Error while handling frame "+frame, e);
+        }
 
         // Remove all the bytes we just parsed
         buffer.remove(endSentinelIndex+1);
@@ -114,10 +123,26 @@ public class Deframer {
         tryParse(); // Keep going, in case there are more frames buffered
     }
 
+    private String logBytes(ByteBuffer buffer, int start, int end) {
+        StringBuilder sb = new StringBuilder();
+
+        sb.append(String.format("%d bytes:", end-start));
+        String sep = "";
+        for (int i = start; i <= end; i++) {
+            sb.append(sep).append(String.format("%02x", buffer.get(i)));
+            sep = ",";
+        }
+
+        return sb.toString();
+    }
+
     private long read32bitLittleEndian(ByteBuffer buffer, int index) {
-        return buffer.get(index) +
-                (((long)buffer.get(index+1)) << 8) +
-                (((long)buffer.get(index+1)) << 16) +
-                (((long)buffer.get(index+1)) << 24);
+
+        long result = ((long)buffer.get(index)) & 0xff;
+        result |= ((long)buffer.get(index+1) & 0xff) << 8;
+        result |= ((long)buffer.get(index+2) & 0xff) << 16;
+        result |= ((long)buffer.get(index+3) & 0xff) << 24;
+
+        return result;
     }
 }

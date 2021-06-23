@@ -1,10 +1,11 @@
 #include "rs485.h"
+
+#include <avr/interrupt.h>
+#include <util/delay.h>
+
 #include "board.h"
 #include "avr8gpio.h"
-#include <avr/interrupt.h>
 #include "frame.h"
-#include "aes256cbc.h"
-#include "crc32.h"
 #include "uart.h"
 
 #if RS485_UART==0
@@ -64,73 +65,68 @@
 #error "Set RS485_UART"
 #endif
 
-// TODO: Initialize these from EEPROM:
-uint8_t nodeId;
-uint8_t nodeKey[AES_BLOCK_SIZE];
-
 // This buffer is used for both transmit and receive
 #define MAX_BUFFER 250
 uint8_t buffer[MAX_BUFFER];
 uint8_t bufferInUse = 0;
 uint8_t bytesLeft = 0;
-
-// Just a counter of received messages
-uint16_t rxCount = 0;
-
+uint8_t *currentTx;
 
 enum CommState {
   CS_RX_IDLE, // Waiting for START_SENTINEL
   CS_RX, // Reading frame
-  CS_TX // Buffer used to transmit
+  CS_WORKING, // Handling recevied buffer
+  CS_TX, // Buffer used to transmit
+  CS_TX_WAITING // Waiting for the last byte to complete transmission
 } commState;
 
 void startRx(void) {
+  GPCLEAR(RS485_TX_ENABLE);
   commState = CS_RX_IDLE;
   bufferInUse = 0;
 }
 
 void handleReceivedBuffer(void) {
-  uint8_t targetId = buffer[TARGET_ID_INDEX];
-  if (targetId != nodeId) {
-    //P("Other target: %02x != %02x\r\n", targetId, nodeId);
-    return;
-  }
   
-  // First check END_SENTINEL
-  if (buffer[bufferInUse-1] != END_SENTINEL) {
-    P("Bad end: %02x@%02x\r\n", buffer[bufferInUse-1], bufferInUse-1);
-    return;
-  }
-  
-  uint8_t payloadSize = buffer[PAYLOAD_SIZE_INDEX];  
-  uint8_t crcIndex = PAYLOAD_INDEX+payloadSize;
-  
-  uint32_t actualCrc = crc32(buffer, crcIndex);
-  uint32_t *claimedCrc = (uint32_t *)(buffer + crcIndex);
-  if (actualCrc != *claimedCrc) {
-    P("Bad crc: %08lx != %08lx bytes 0+%x\r\n", actualCrc, *claimedCrc, crcIndex);
-    return;
-  } 
-  
-  // Find the handler of the specific message type
-  uint8_t type = buffer[MESSAGE_TYPE_INDEX];
-  P("Got healty message of type: %02x\r\n", type);
+  uint8_t responseSize = handleFrame(buffer, bufferInUse);
+
+  if (responseSize > 0) {
+    bytesLeft = responseSize;
+    commState = CS_TX;
+    //P("Sending response with %02x bytes\r\n", responseSize+1);
+    currentTx = buffer;
+    GPSET(RS485_TX_ENABLE);    
+    _delay_ms(1);
+    UCSRnB |= _BV(UDRIEn); // Get interrupt when buffer ready for more data
     
+    UDRn = START_SENTINEL;
+  } else {
+    startRx();
+  }       
 }
 
-uint16_t rs485RxCount(void) {
-  return rxCount;
-}
 
 // Transmit Data Register Empty interrupt
 ISR(UDRE_vect) {
-  // Feed more data to UDRn
+  if (commState == CS_TX) {
+    if (bytesLeft > 0) {
+      uint8_t tx = *currentTx++;
+//      P("TX: %02x@%02x\r\n", tx, bytesLeft);
+      UDRn = tx;
+      bytesLeft--;
+      if (!bytesLeft) {
+        UCSRnB &= ~_BV(UDRIEn); // Stop this interrupt
+        commState = CS_TX_WAITING;
+      }
+    }
+  }
 }
 
 // Transmit complete interrupt
 ISR(TX_vect) {   
-  // Release the RS485 bus
-  GPCLEAR(RS485_TX_ENABLE);
+  if (commState == CS_TX_WAITING) {
+    startRx(); // Go back to listening for a start sentinel  
+  }
 }
 
 // Receive complete Data Register Empty interrupt
@@ -140,7 +136,6 @@ ISR(RX_vect) {
   uint8_t rx = UDRn;
   if (commState == CS_RX_IDLE) {      
     if (rx == START_SENTINEL) {
-      rxCount++;
       commState = CS_RX;
       bufferInUse = 0;
     }
@@ -151,25 +146,21 @@ ISR(RX_vect) {
     }
     uint8_t index = bufferInUse++;
     buffer[index] = rx;
-    P("%02x@%02x ", rx, index);
+//    P("%02x@%02x ", rx, index);
     
     if (index == PAYLOAD_SIZE_INDEX) {
       bytesLeft = rx + CRC32_SIZE + 1;
       
     } else if (index > PAYLOAD_SIZE_INDEX) {
       if (--bytesLeft == 0) {
-        commState = CS_TX;
+        commState = CS_WORKING;
         handleReceivedBuffer();
-        startRx();
       }
     }
   }
 }
 
 void rs485Init(void) {
-  // TODO: Read nodeId and nodeKey from EEPROM
-  nodeId = 0xff;
-  
   startRx();
   
   GPOUTPUT(RS485_TX_ENABLE);
@@ -184,7 +175,6 @@ void rs485Init(void) {
   UCSRnB = _BV(TXENn) // Transmit
           | _BV(RXENn) // Receive
           | _BV(TXCIEn) // Get interrupt when transmission is done
-          | _BV(UDRIEn) // Get interrupt when buffer ready for more data
           | _BV(RXCIEn) // Get interrupt when data is received
           ;           
   sei();          
