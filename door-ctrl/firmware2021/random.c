@@ -4,10 +4,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#define REFEED_CYCLES 70
+// The number of samples to pull from the adc for each time we want to refill the entropy pool
+#define REFEED_CYCLES 100
 #define ENTROPY_SIZE 33
 uint8_t entropy[ENTROPY_SIZE];
-uint8_t refeed = 10;
+uint8_t refeed;
 uint8_t put = 0;
 uint8_t take = 0;
 
@@ -54,13 +55,19 @@ void randomInit(void) {
 }
 
 uint8_t randomByte(void) {
-  while (refeed) {} // Wait for refeeding to finish
+//  while (refeed) {} // Wait for refeeding to finish
   uint8_t rnd = entropy[take++];
   if (take >= ENTROPY_SIZE) {
-    refeed = REFEED_CYCLES;
     take = 0;
+    refeed = REFEED_CYCLES;
+    ADCSRA |= _BV(ADSC);    
+  }
+  
+  if (take == ENTROPY_SIZE/2) {
+    refeed = REFEED_CYCLES;
     ADCSRA |= _BV(ADSC);
   }
+  
   return rnd;
 }
 
@@ -69,3 +76,4 @@ void randomBytes(uint8_t *target, uint8_t size) {
       *target++ = randomByte();
   }  
 }
+

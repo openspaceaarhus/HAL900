@@ -25,8 +25,6 @@ public class BusDevice {
     @Getter
     private long created = System.currentTimeMillis();
 
-    private final Semaphore answerSemaphore = new Semaphore(1);
-
     /**
      * Produce the next output frame for this device
      * @return
@@ -41,22 +39,12 @@ public class BusDevice {
      * @param frame The new frame
      */
     public void handleAnswerFrame(Frame frame) {
-        answerSemaphore.release();
-
-        if (frame.getType() == PollResponse.TYPE) {
+         if (frame.getType() == PollResponse.TYPE) {
             PollResponse pr = PollResponse.from(frame);
             lastPollResponseSeen = System.currentTimeMillis();
+
         }
 
         // TODO something with the frame...
     }
-
-    /**
-     * Wait for up to timeoutMills ms for a frame to arrive for this device.
-     * @param timeoutMillis The number of millis to wait
-     */
-    public boolean awaitAnswerFrame(int timeoutMillis) {
-        return answerSemaphore.tryAcquire(timeoutMillis);
-    }
-
 }

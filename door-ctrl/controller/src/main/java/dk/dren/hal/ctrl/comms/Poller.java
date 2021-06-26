@@ -3,6 +3,7 @@ package dk.dren.hal.ctrl.comms;
 import dk.dren.hal.ctrl.comms.frames.EnrollRequest;
 import dk.dren.hal.ctrl.comms.frames.EnrollResponse;
 import dk.dren.hal.ctrl.comms.frames.PollFrame;
+import dk.dren.hal.ctrl.storage.StateManager;
 import lombok.extern.java.Log;
 
 import java.io.File;
@@ -18,36 +19,38 @@ public class Poller {
 
     public static final long ENROLLMENT_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
     private final RS485 rs485;
+    private final StateManager stateManager;
     private Thread pollThread;
     private Map<Integer, BusDevice> deviceById = new TreeMap<>();
     private EnrollRequest enrollmentRequest;
-    private Semaphore enrollRequestSemaphore = new Semaphore(1);
     private List<EnrollResponse> pendingEnrollments = new ArrayList<>();
 
-    public Poller(File serialDevice) {
+    public Poller(File serialDevice, StateManager stateManager) {
         rs485 = new RS485(serialDevice, this::handleFrame);
+        this.stateManager = stateManager;
+        for (BusDevice knownBusDevice : stateManager.getKnownBusDevices()) {
+            deviceById.put(knownBusDevice.getId(), knownBusDevice);
+        };
     }
 
     private void handleFrame(Frame frame) {
+        log.fine(()->"Got: "+frame.toString());
         if (frame.getType() == EnrollRequest.TYPE) {
             handleEnrollRequest(frame);
-        } else {
+        } else if (frame.getTargetId() == 0x00){
             final BusDevice busDevice = deviceById.get((int)frame.getSourceId());
             if (busDevice != null) {
                 busDevice.handleAnswerFrame(frame);
             } else {
                 log.warning(String.format("Unknown source device: 0x%02x: %s", frame.getSourceId(), frame));
             }
+        } else {
+            log.warning(String.format("Unknown target device: 0x%02x: %s", frame.getTargetId(), frame));
         }
     }
 
     private void handleEnrollRequest(Frame frame) {
         enrollmentRequest = EnrollRequest.from(frame);
-        enrollRequestSemaphore.release();
-    }
-
-    private void awaitEnrollAnswerFrame() throws InterruptedException {
-        enrollRequestSemaphore.tryAcquire(100, TimeUnit.MILLISECONDS);
     }
 
     public void start() {
@@ -59,51 +62,38 @@ public class Poller {
 
     private void poll() {
         while (true) {
-            try {
-                for (BusDevice bd : deviceById.values()) {
-                    rs485.send(bd.getQueryFrame());
-                    bd.awaitAnswerFrame(100);
-                }
+            for (BusDevice bd : deviceById.values()) {
+                rs485.sendAndWaitForReply(bd.getQueryFrame());
+            }
 
-                final Iterator<EnrollResponse> pendingIterator = pendingEnrollments.iterator();
-                while (pendingIterator.hasNext()) {
-                    EnrollResponse pe = pendingIterator.next();
-                    final BusDevice bd = pe.getBusDevice();
-                    if (bd.getCreated() < bd.getLastPollResponseSeen()) {
-                        pendingIterator.remove();
-                        storeDevices();
-                        log.info("Successful enrollment of device #"+bd.getId());
-                    } else {
-                        if (System.currentTimeMillis()-bd.getCreated() > ENROLLMENT_TIMEOUT) {
-                            deviceById.remove(bd.getId());
-                            pendingIterator.remove();
-                            log.info("Timed out enrollment of device #"+bd.getId());
-                        }
-                    }
+            final Iterator<EnrollResponse> pendingIterator = pendingEnrollments.iterator();
+            while (pendingIterator.hasNext()) {
+                EnrollResponse pe = pendingIterator.next();
+                final BusDevice bd = pe.getBusDevice();
+                if (bd.getCreated() < bd.getLastPollResponseSeen()) {
+                    pendingIterator.remove();
+                    stateManager.addDevice(bd);
+                    log.info("Successful enrollment of device #"+bd.getId());
+                } else if (System.currentTimeMillis()-bd.getCreated() > ENROLLMENT_TIMEOUT) {
+                    deviceById.remove(bd.getId());
+                    pendingIterator.remove();
+                    log.info("Timed out enrollment of device #"+bd.getId());
+                } else {
+                    rs485.sendWithoutWait(pe.getFrame());
                 }
+            }
 
-                // Special handling of enrollment
-                enrollmentRequest = null;
-                enrollRequestSemaphore.tryAcquire(); // Either we get it or we don't doesn't matter.
-                rs485.send(PollFrame.create(0xff, 0));
-                awaitEnrollAnswerFrame();
-                if (enrollmentRequest != null) {
-                    log.info("Got "+ enrollmentRequest);
-                    final EnrollResponse enrollResponse = EnrollResponse.create(enrollmentRequest, getFirstFreeNodeId());
-                    rs485.send(enrollResponse.getFrame());
-                    pendingEnrollments.add(enrollResponse);
-                    deviceById.put(enrollResponse.getBusDevice().getId(), enrollResponse.getBusDevice());
-                }
-
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException("Got interrupted", e);
+            // Special handling of enrollment
+            enrollmentRequest = null;
+            rs485.sendAndWaitForReply(PollFrame.create(0xff, 0));
+            if (enrollmentRequest != null) {
+                log.info("Got "+ enrollmentRequest);
+                final EnrollResponse enrollResponse = EnrollResponse.create(enrollmentRequest, getFirstFreeNodeId());
+                rs485.sendAndWaitForReply(enrollResponse.getFrame());
+                pendingEnrollments.add(enrollResponse);
+                deviceById.put(enrollResponse.getBusDevice().getId(), enrollResponse.getBusDevice());
             }
         }
-    }
-
-    private void storeDevices() {
-        // TODO
     }
 
     private int getFirstFreeNodeId() {
@@ -120,5 +110,9 @@ public class Poller {
         }
 
         throw new IllegalStateException("Cannot find a free node id in the range 1..250");
+    }
+
+    public void join() throws InterruptedException {
+        pollThread.join();
     }
 }

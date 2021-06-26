@@ -12,7 +12,7 @@ import javax.crypto.SecretKey;
 @RequiredArgsConstructor
 @Getter
 public class EnrollResponse {
-    private static final Object TYPE = 0x02;
+    private static final int TYPE = 0x02;
     public static final int PAYLOAD_SIZE = 4 + 1 + 32;
     private final Frame frame;
     private final BusDevice busDevice;
@@ -32,7 +32,6 @@ public class EnrollResponse {
         payload.add(request.getTemporaryId().toArray());
         payload.add((byte)firstFreeNodeId);
         payload.add(aesKeyBytes);
-
 
         final Frame frame = new Frame((byte) 0x00, (byte)0xff, (byte)TYPE, payload);
 

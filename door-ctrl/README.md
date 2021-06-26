@@ -110,8 +110,8 @@ Payload is an encrypted list of events.
 
 | Size | Name | Meaning | 
 | ---- |: ---:| -------:|
-| 16   | IV | Initialization vector, chosen by random for each message | 
-| 2    | Size | The number of encrypted bytes |
+| 16   | IV | Initiranalization vector, chosen by random for each message | 
+| 1    | Size | The number of encrypted bytes, this can be smaller than the payload says due to padding |
 | size | Data | The encrypted data, padded to 16 byte blocks |
 
 ## Decrypted payload
@@ -125,12 +125,7 @@ The plain text payload contains the actual data and a crc32 of the data to preve
 
 ## Event payload
 
-The data of an event payload consists of:
-
-| Size | Name | Meaning | 
-| ---- |: ---:| -------:|
-| 1    | Count | The number of events in this payload |
-| n    | events | The event records |
+The data of an event payload consists of 0 to many events
 
 ### Events
 
@@ -140,7 +135,7 @@ Each event is a record consisting of:
 | ----- |: ---:| -------:|
 | 1     | Type | The type of the event, see later |
 | 1     | Counter | Ever increasing counter starting at 1 ending at 0xff | 
-| 1     | Size | Number of bytes in the event |
+| 1     | Size | Number of bytes in the data |
 | size  | Data | The data of the event |
  
 
@@ -160,7 +155,9 @@ Sent by the controller to change an output of the device.
 
 The payload is encrypted as described in Encrypted Payload
 
-If a device gets a set output command with a bad control token, then it will issue a new token.
+If a device gets a set output command with a bad control token, then it will issue a new token, but ignore the output command.
+
+If a device gets a valid token, then it will perform the command and issue a new token.
 
 Payload contains:
 

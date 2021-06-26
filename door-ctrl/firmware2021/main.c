@@ -13,30 +13,26 @@
 #include "rs485.h"
 #include "frame.h"
 #include "random.h"
-
+#include "events.h"
    
 int main(void) {
-  wdt_enable(WDTO_4S);
+  wdt_enable(WDTO_4S);  
   uartInit();
   L("Booting");
   frameInit();
   rs485Init();
   randomInit();
+  powerUpEvent();
   
-/*
-  aes256cbcInit(AES_KEY, IV);
-  GPOUTPUT(GPB1);
-    char *data = "0123456789abcdef";
-
-    GPSET(GPB1);    
-    aes256cbcEncrypt((uint8_t *)data);    
-    GPCLEAR(GPB1);
-  
-  */
-  
+  uint16_t lastRxCount = 0;
   while (1) {
     wdt_reset();
     _delay_ms(1000);
-    P(" Frames: %d\r\n", frameRxCount());
+    uint16_t thisRx = frameRxCount();
+    if (thisRx != lastRxCount) {
+      //P("Frames: %d\r\n", frameRxCount());
+      lastRxCount = thisRx;
+    }
+    //msgEvent("Frames: %d", frameRxCount());
   }
 }

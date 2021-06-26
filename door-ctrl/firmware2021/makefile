@@ -16,3 +16,6 @@ readfuses:
 
 fuses:
 	avrdude $(AVR_PROGRAMMER) -p $(AVR) -B 100 -U "lfuse:w:0xce:m" -U "hfuse:w:0xd9:m"
+
+debugfuses:
+	avrdude $(AVR_PROGRAMMER) -p $(AVR) -B 100 -U "lfuse:w:0xce:m" -U "hfuse:w:0xd1:m"

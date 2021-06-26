@@ -87,7 +87,7 @@ public class Deframer {
             return;
         }
 
-        log.fine(()->logBytes(buffer, Frame.START_SENTINEL_INDEX, endSentinelIndex));
+        log.finer(()->logBytes(buffer, Frame.START_SENTINEL_INDEX, endSentinelIndex));
 
         final int crc32Index = Frame.getCrc32Index(payloadSize);
         final long crc32FromFrame = read32bitLittleEndian(buffer, crc32Index);
