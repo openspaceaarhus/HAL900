@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dk.dren.hal.ctrl.comms.BusDevice;
 import dk.dren.hal.ctrl.crypto.AES256Key;
+import dk.dren.hal.ctrl.events.DeviceEvent;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 
@@ -14,6 +15,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
  * but once connection is reestablished the state is reconciled with HAL
  */
 @Log
-public class StateManager {
+public class StateManager implements Consumer<DeviceEvent> {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/m H:M:S");
     public static final ObjectMapper OM = new ObjectMapper(new YAMLFactory());
     private State state;
@@ -85,10 +87,25 @@ public class StateManager {
 
     public synchronized List<BusDevice> getKnownBusDevices() {
         return state.getDevices().values().stream()
-                .map(s->new BusDevice(s.getId(), AES256Key.load(s.getAesKey())))
+                .map(this::createBusDevice)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public synchronized void accept(DeviceEvent deviceEvent) {
+        long timestamp = System.currentTimeMillis();
+        while (state.getEvents().containsKey(timestamp)) {
+            timestamp++;
+        }
+        state.getEvents().put(timestamp, deviceEvent.toString());
+        log.info("New event: "+deviceEvent);
+    }
+
+    private BusDevice createBusDevice(DeviceState s) {
+        final BusDevice busDevice = new BusDevice(s.getId(), AES256Key.load(s.getAesKey()));
+        busDevice.setEventConsumer(this);
+        return busDevice;
+    }
 
     private String millisToString(long millis) {
         synchronized (SIMPLE_DATE_FORMAT) {
@@ -100,7 +117,7 @@ public class StateManager {
     private void syncLoop() {
         while (true) {
             final int dirt = dirtyState.drainPermits();
-            log.info(()->"Syncing "+dirt+" changes");
+            log.fine(()->"Syncing "+dirt+" changes");
             try {
                 sync();
             } catch (Exception e) {

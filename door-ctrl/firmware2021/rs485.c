@@ -93,11 +93,13 @@ void handleReceivedBuffer(void) {
   if (responseSize > 0) {
     bytesLeft = responseSize;
     commState = CS_TX;
+    /*
     P("Response %d bytes: \r\n", responseSize+1, buffer[MESSAGE_TYPE_INDEX]);
     for (int i=0; i<responseSize;i++) {
       P("%02x ", buffer[i]);
     }
     L("");
+    */
     currentTx = buffer;
     GPSET(RS485_TX_ENABLE);    
     _delay_ms(1);

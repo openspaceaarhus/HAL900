@@ -136,7 +136,7 @@ public class Deframer {
         return sb.toString();
     }
 
-    private long read32bitLittleEndian(ByteBuffer buffer, int index) {
+    public static long read32bitLittleEndian(ByteBuffer buffer, int index) {
 
         long result = ((long)buffer.get(index)) & 0xff;
         result |= ((long)buffer.get(index+1) & 0xff) << 8;

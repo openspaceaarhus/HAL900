@@ -83,7 +83,7 @@ uint8_t encryptPayload(uint8_t *buffer, uint8_t rawBytes) {
   memcpy(data+rawBytes, &crc, 4); 
   
   uint8_t paddedSize = rawBytes+4; // The padded size contains the crc32
-  if (rawBytes & (AES_BLOCK_SIZE-1)) {
+  if (paddedSize & (AES_BLOCK_SIZE-1)) {
     paddedSize = ((paddedSize >> 4)+1)<<4;
   }
   
@@ -145,8 +145,7 @@ uint8_t handleFrame(uint8_t* buffer, uint8_t bufferInUse) {
   
   uint8_t type = buffer[MESSAGE_TYPE_INDEX];
   uint8_t sourceId = buffer[SOURCE_ID_INDEX];
-  P("Got healthy message %02x -> %02x of type %02x with %02x bytes payload\r\n",
-    sourceId, targetId, type, payloadSize);
+  //P("Got healthy message %02x -> %02x of type %02x with %02x bytes payload\r\n", sourceId, targetId, type, payloadSize);
   
   GPWRITE(RS485_LED, rxCount & 1);
   rxCount++;  

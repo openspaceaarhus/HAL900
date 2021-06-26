@@ -14,14 +14,18 @@
 #include "frame.h"
 #include "random.h"
 #include "events.h"
+#include "leds.h"
+#include "wiegand.h"
    
 int main(void) {
   wdt_enable(WDTO_4S);  
   uartInit();
   L("Booting");
+  randomInit();
   frameInit();
   rs485Init();
-  randomInit();
+  initWiegand();
+  initLEDs();
   powerUpEvent();
   
   uint16_t lastRxCount = 0;
@@ -30,6 +34,7 @@ int main(void) {
     _delay_ms(1000);
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {
+      setLEDs(thisRx);
       //P("Frames: %d\r\n", frameRxCount());
       lastRxCount = thisRx;
     }
