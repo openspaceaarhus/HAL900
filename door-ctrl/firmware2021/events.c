@@ -17,7 +17,7 @@ void event(uint8_t type, uint8_t *data, uint8_t dataSize) {
   uint8_t eventSize = dataSize+3;
   
   if (MAX_EVENT_BYTES <= eventBufferInUse+eventSize) {
-    P("Event buffer overflow dropping %02x with %02x payload", type, dataSize);    
+    P("Event buffer overflow dropping %02x with %02x payload\r\n", type, dataSize);    
     return;
   }
 
@@ -29,6 +29,8 @@ void event(uint8_t type, uint8_t *data, uint8_t dataSize) {
   if (!nextEventNumber) {
     nextEventNumber = 1;
   }
+  
+  P("EB: %d\r\n", eventBufferInUse);
 }
 
 void powerUpEvent(void) {

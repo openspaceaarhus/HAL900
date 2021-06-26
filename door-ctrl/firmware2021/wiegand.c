@@ -11,17 +11,16 @@ volatile unsigned char timeout;
 
 void initWiegand(void) {
   timeout = 0;
+  data.bits = 0;
 
   // Enable pin change interrupt for the wiegand inputs, switch the led/beeper pins to output and off:
-  PCMSK0 |= _BV(PCINT0) | _BV(PCINT1);
+  PCMSK0 = _BV(PCINT0) | _BV(PCINT1);
   GPINPUT(WIEGAND_D0);
   GPINPUT(WIEGAND_D1);
   GPOUTPUT(UNLOCK_LED);
 
-  PCICR |= _BV(PCIE0);
+  PCICR = _BV(PCIE0);
   sei();
-
-  data.bits = 0;
 }
 
 
@@ -32,8 +31,8 @@ ISR(PCINT0_vect) {
   uint8_t rfidBit0 = (state & 1) && !(newState & 1);
   uint8_t rfidBit1 = (state & 2) && !(newState & 2);
 
-    P("bit %d: %d %d\r\n", data.bits, rfidBit0, rfidBit1);
   if (rfidBit0 || rfidBit1) {    
+    //P("bit %d: %x->%x  0:%d 1:%d \r\n", data.bits, state, newState, rfidBit0, rfidBit1);
     
     uint8_t byteIndex = data.bits >> 3;
     uint8_t bitValue  = 1<<(data.bits & 7);

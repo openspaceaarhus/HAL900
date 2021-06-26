@@ -31,7 +31,7 @@ int main(void) {
   uint16_t lastRxCount = 0;
   while (1) {
     wdt_reset();
-    _delay_ms(1000);
+    _delay_ms(100);
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {
       setLEDs(thisRx);
@@ -39,5 +39,7 @@ int main(void) {
       lastRxCount = thisRx;
     }
     //msgEvent("Frames: %d", frameRxCount());
+    
+    PORTA = thisRx & 3;
   }
 }
