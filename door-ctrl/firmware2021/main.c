@@ -31,12 +31,13 @@ int main(void) {
   uint16_t lastRxCount = 0;
   while (1) {
     wdt_reset();
-    _delay_ms(100);
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {
       setLEDs(thisRx);
       //P("Frames: %d\r\n", frameRxCount());
       lastRxCount = thisRx;
+//      set_sleep_mode(0);
+      //sleep_cpu();
     }
     //msgEvent("Frames: %d", frameRxCount());
     

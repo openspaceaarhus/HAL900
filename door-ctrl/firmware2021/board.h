@@ -23,10 +23,12 @@
 #define RELAY2 GPC6
 
 // Port 2 configured as inputs with pull-ups
-#define PORT_2_1 PA4
-#define PORT_2_2 PA5
-#define PORT_2_3 PA6
-#define PORT_2_6 PA7
+#define PORT_2_1 GPA4
+#define PORT_2_2 GPA5
+#define PORT_2_3 GPA6
+#define PORT_2_6 GPA7
 
 // PA4 is used for noise inputs
 #define NOISE_ADC 4
+
+#define TOGGLE GPB4

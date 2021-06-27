@@ -7,6 +7,7 @@
 #include "avr8gpio.h"
 #include "frame.h"
 #include "uart.h"
+#include "leds.h"
 
 #if RS485_UART==0
 
@@ -89,9 +90,12 @@ void startRx(void) {
 void handleReceivedBuffer(void) {
   // TODO: Use a timer to ensure consistent timing from
   // end of poll frame to start of response.
+  resetMsTimer();
+  
   uint8_t responseSize = handleFrame(buffer, bufferInUse);
 
   if (responseSize > 0) {
+    //sleepUntilMs(5);
     _delay_ms(5);
     bytesLeft = responseSize;
     commState = CS_TX;
