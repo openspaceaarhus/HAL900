@@ -53,7 +53,7 @@ uint8_t popEvents(uint8_t skipOlder, uint8_t *buffer, uint8_t maxBytes) {
     if (skipOlder < nextEventNumber) {
       rebooted = 0;      
     }
-  } else {
+  } else if (skipOlder) {
     uint16_t pos = 0;
     while (pos < eventBufferInUse) {
       uint8_t number = eventBuffer[pos+1];

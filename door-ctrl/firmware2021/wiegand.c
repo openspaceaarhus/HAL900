@@ -55,8 +55,9 @@ void pollWiegandTimeout() {
   if (timeout++ > 50) {        
     if (data.bits >= 4) {
       wiegandInput(&data);
-      resetData();
     }
+    resetData();
+    timeout = 0;
   }
 }
 

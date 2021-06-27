@@ -97,8 +97,10 @@ public class StateManager implements Consumer<DeviceEvent> {
         while (state.getEvents().containsKey(timestamp)) {
             timestamp++;
         }
-        state.getEvents().put(timestamp, deviceEvent.toString());
-        log.info("New event: "+deviceEvent.toData());
+        final String eventAsString = deviceEvent.toData();
+        state.getEvents().put(timestamp, eventAsString);
+        log.info("New event: "+ eventAsString);
+        dirtyState.release(); // Signal to the sync thread that it's time to go to work.
     }
 
     private BusDevice createBusDevice(DeviceState s) {

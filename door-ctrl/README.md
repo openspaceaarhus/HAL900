@@ -142,8 +142,7 @@ Each event is a record consisting of:
 The event types are:
 
 * 0x00: Power up, no data.
-* 0x01: Keypress: One or more keys pressed on the keypad.
-* 0x02: RFID: An RFID that was scanned
+* 0x01: Wiegand: An RFID was scanned or a key was pressed on the keypad.
 * 0x03: GPIO: Current state of both outputs and inputs.
 * 0x04: Control token: A new 32 bit token for sending output signals
 * 0x05: Log message: Informational text.
