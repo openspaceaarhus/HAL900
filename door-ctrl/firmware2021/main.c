@@ -30,16 +30,15 @@ int main(void) {
   
   uint16_t lastRxCount = 0;
   while (1) {
-    wdt_reset();
+    handleReceivedBuffer(); // Puts CPU to sleep if no work to be done.
+    
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {
+      wdt_reset(); // This means that we'll reset if the controller ever goes down.
       setLEDs(thisRx);
       //P("Frames: %d\r\n", frameRxCount());
       lastRxCount = thisRx;
-//      set_sleep_mode(0);
-      //sleep_cpu();
     }
-    //msgEvent("Frames: %d", frameRxCount());
     
     PORTA = thisRx & 3;
   }

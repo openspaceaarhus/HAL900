@@ -5,3 +5,4 @@
 #define MAX_BUFFER 254
 
 void rs485Init(void);
+void handleReceivedBuffer(void);

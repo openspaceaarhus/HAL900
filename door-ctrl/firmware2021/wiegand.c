@@ -8,7 +8,7 @@
 #include "uart.h"
 
 struct WiegandData data;
-volatile unsigned char state = 0xff;
+volatile unsigned char state = 0;
 volatile unsigned char timeout;
 
 void resetData(void) {
@@ -32,7 +32,8 @@ void initWiegand(void) {
 
 ISR(PCINT0_vect) {
   timeout = 0;
-  uint8_t newState = (GPREAD(WIEGAND_D0) ? 1 : 0) | (GPREAD(WIEGAND_D1) ? 2 : 0);
+  // wiegand is idle high, when a wire is pulsed low it counts as either a 0 or a 1
+  uint8_t newState = (GPREAD(WIEGAND_D0) ? 0 : 1) | (GPREAD(WIEGAND_D1) ? 0 : 2);
   
   uint8_t rfidBit0 = (state & 1) && !(newState & 1);
   uint8_t rfidBit1 = (state & 2) && !(newState & 2);
@@ -44,14 +45,14 @@ ISR(PCINT0_vect) {
       data.bytes[byteIndex] |= 1;
     } 
       
-    data.bits++;
+    data.bits++;    
   }
   
   state = newState;
 }
 
 void pollWiegandTimeout() {
-  if (timeout++ > 10) {        
+  if (timeout++ > 50) {        
     if (data.bits >= 4) {
       wiegandInput(&data);
       resetData();

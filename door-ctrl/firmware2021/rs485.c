@@ -2,6 +2,7 @@
 
 #include <avr/interrupt.h>
 #include <util/delay.h>
+#include <avr/sleep.h>
 
 #include "board.h"
 #include "avr8gpio.h"
@@ -69,11 +70,11 @@
 // This buffer is used for both transmit and receive
 
 uint8_t buffer[MAX_BUFFER];
-uint8_t bufferInUse = 0;
-uint8_t bytesLeft = 0;
-uint8_t *currentTx;
+volatile uint8_t bufferInUse = 0;
+volatile uint8_t bytesLeft = 0;
+volatile uint8_t *currentTx;
 
-enum CommState {
+volatile enum CommState {
   CS_RX_IDLE, // Waiting for START_SENTINEL
   CS_RX, // Reading frame
   CS_WORKING, // Handling recevied buffer
@@ -88,6 +89,12 @@ void startRx(void) {
 }
 
 void handleReceivedBuffer(void) {
+  if (commState != CS_WORKING) {
+    set_sleep_mode(0);
+    sleep_cpu();
+    return;
+  }
+  
   // TODO: Use a timer to ensure consistent timing from
   // end of poll frame to start of response.
   resetMsTimer();
@@ -95,10 +102,9 @@ void handleReceivedBuffer(void) {
   uint8_t responseSize = handleFrame(buffer, bufferInUse);
 
   if (responseSize > 0) {
-    //sleepUntilMs(5);
-    _delay_ms(5);
+    sleepUntilMs(5);
+    //_delay_ms(5);
     bytesLeft = responseSize;
-    commState = CS_TX;
     /*
     P("Response %d bytes: \r\n", responseSize+1, buffer[MESSAGE_TYPE_INDEX]);
     for (int i=0; i<responseSize;i++) {
@@ -112,6 +118,7 @@ void handleReceivedBuffer(void) {
     UCSRnB |= _BV(UDRIEn); // Get interrupt when buffer ready for more data
     
     UDRn = START_SENTINEL;
+    commState = CS_TX;
   } else {
     startRx();
   }       
@@ -165,8 +172,7 @@ ISR(RX_vect) {
       
     } else if (index > PAYLOAD_SIZE_INDEX) {
       if (--bytesLeft == 0) {
-        commState = CS_WORKING;
-        handleReceivedBuffer();
+        commState = CS_WORKING;        
       }
     }
   }

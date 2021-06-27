@@ -31,4 +31,5 @@
 // PA4 is used for noise inputs
 #define NOISE_ADC 4
 
-#define TOGGLE GPB4
+#define DEBUG1 GPB4
+#define DEBUG2 GPB2

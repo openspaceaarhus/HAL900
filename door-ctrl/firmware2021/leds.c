@@ -25,8 +25,7 @@ void initLEDs(void) {
   TCCR2B = _BV(CS22) | _BV(CS21);
 
   sei(); // Enable interrupts!  
-  
-  GPOUTPUT(TOGGLE);
+  sleep_enable();
 }
 
 const char PLEX[6][2] = {
@@ -43,8 +42,6 @@ const char PLEX[6][2] = {
 
 ISR(TIMER2_COMPA_vect) {
   ms++;
-    
-  GPWRITE(TOGGLE, ms&1);
     
   // Tristate all pins:
   DDRC  &=~ (_BV(PC3) | _BV(PC4) | _BV(PC5));
@@ -69,8 +66,8 @@ void resetMsTimer(void) {
 
 void sleepUntilMs(uint8_t target) {
   while (ms < target) {
-//    set_sleep_mode(0);
-//    sleep_cpu();
+    set_sleep_mode(0);
+    sleep_cpu();
   }
 }
 
