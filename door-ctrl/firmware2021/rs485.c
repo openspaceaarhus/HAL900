@@ -87,10 +87,12 @@ void startRx(void) {
 }
 
 void handleReceivedBuffer(void) {
-  
+  // TODO: Use a timer to ensure consistent timing from
+  // end of poll frame to start of response.
   uint8_t responseSize = handleFrame(buffer, bufferInUse);
 
   if (responseSize > 0) {
+    _delay_ms(5);
     bytesLeft = responseSize;
     commState = CS_TX;
     /*

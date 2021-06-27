@@ -30,7 +30,7 @@ void event(uint8_t type, uint8_t *data, uint8_t dataSize) {
     nextEventNumber = 1;
   }
   
-  P("EB: %d\r\n", eventBufferInUse);
+  //P("EB: %02x %d %d\r\n", type, dataSize, eventBufferInUse);
 }
 
 void powerUpEvent(void) {

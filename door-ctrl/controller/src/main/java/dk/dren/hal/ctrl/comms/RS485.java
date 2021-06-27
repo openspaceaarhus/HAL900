@@ -83,10 +83,10 @@ public class RS485 {
             final long t0 = System.currentTimeMillis();
             if (responseSemaphore.tryAcquire(200, TimeUnit.MILLISECONDS)) {
                 final long ms = System.currentTimeMillis() - t0;
-                log.finest(()->"Got answer in " + ms + " ms");
+                log.fine(()->"Got answer in " + ms + " ms");
             } else {
                 final long ms = System.currentTimeMillis() - t0;
-                log.finest(()->"Got no answer, waited " + ms + " ms");
+                log.fine(()->"Got no answer, waited " + ms + " ms");
             }
         }
     }

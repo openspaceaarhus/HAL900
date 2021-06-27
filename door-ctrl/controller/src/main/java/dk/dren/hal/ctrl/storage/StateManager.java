@@ -98,7 +98,7 @@ public class StateManager implements Consumer<DeviceEvent> {
             timestamp++;
         }
         state.getEvents().put(timestamp, deviceEvent.toString());
-        log.info("New event: "+deviceEvent);
+        log.info("New event: "+deviceEvent.toData());
     }
 
     private BusDevice createBusDevice(DeviceState s) {

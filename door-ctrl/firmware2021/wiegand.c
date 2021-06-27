@@ -1,17 +1,23 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
+#include <string.h>
+
 #include "wiegand.h"
 #include "events.h"
 #include "board.h"
 #include "uart.h"
 
 struct WiegandData data;
-volatile unsigned char state;
+volatile unsigned char state = 0xff;
 volatile unsigned char timeout;
+
+void resetData(void) {
+  memset(&data, 0, sizeof(data));  
+}
 
 void initWiegand(void) {
   timeout = 0;
-  data.bits = 0;
+  resetData();
 
   // Enable pin change interrupt for the wiegand inputs, switch the led/beeper pins to output and off:
   PCMSK0 = _BV(PCINT0) | _BV(PCINT1);
@@ -32,16 +38,12 @@ ISR(PCINT0_vect) {
   uint8_t rfidBit1 = (state & 2) && !(newState & 2);
 
   if (rfidBit0 || rfidBit1) {    
-    //P("bit %d: %x->%x  0:%d 1:%d \r\n", data.bits, state, newState, rfidBit0, rfidBit1);
-    
     uint8_t byteIndex = data.bits >> 3;
-    uint8_t bitValue  = 1<<(data.bits & 7);
-    
-    if (rfidBit1) {
-      data.bytes[byteIndex] |= bitValue;
-    } else {
-      data.bytes[byteIndex] &=~ bitValue;
-    }    
+    data.bytes[byteIndex] <<= 1;
+    if (rfidBit0) {
+      data.bytes[byteIndex] |= 1;
+    } 
+      
     data.bits++;
   }
   
@@ -52,7 +54,7 @@ void pollWiegandTimeout() {
   if (timeout++ > 10) {        
     if (data.bits >= 4) {
       wiegandInput(&data);
-      data.bits = 0;
+      resetData();
     }
   }
 }

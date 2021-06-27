@@ -20,7 +20,7 @@ public class RawEvent implements DeviceEvent {
 
         sb.append(String.format("Raw event with %d bytes:", data.length));
         String sep = "";
-        for (int i = 0; i <= data.length; i++) {
+        for (int i = 0; i < data.length; i++) {
             sb.append(sep).append(String.format(" %02x", data[i]));
         }
 
