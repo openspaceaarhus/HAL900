@@ -105,7 +105,7 @@ public class BusDevice {
         if (doorMinder.validateCredentials(id, rfid, pin)) {
             sendEvent(new Unlocked(id, rfid));
 
-            // TODO: Set
+
 
         }
     }

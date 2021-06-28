@@ -562,16 +562,20 @@ sub rfidPage {
 	l "Marked rfid as lost rfid_id=$rfid_id";
     }
 
-    my $rr = db->sql("select rfid, pin, lost from rfid where owner_id=? and id=?",
+    my $rr = db->sql("select rfid, pin, lost, name from rfid where owner_id=? and id=?",
 		     getSession->{member_id}, $rfid_id)
 	or die "Failed to fetch RFID for user $rfid_id";
-    my ($rfid, $pin, $lost) = $rr->fetchrow_array;    
+    my ($rfid, $pin, $lost, $name) = $rr->fetchrow_array;    
     $rr->finish;
     return outputGoto('/hal/account') unless $rfid;
 
     my $html = '';
 
-    $html .= "<p>Din RFID nøgle har nummer <strong>$rfid</strong>.</p>";
+    if ($rfid ne $name) {
+	$html .= "<p>Din RFID nøgle har nummer <strong>$rfid</strong> og hedder <strong>$name</strong>.</p>";
+    } else {
+	$html .= "<p>Din RFID nøgle har nummer <strong>$rfid</strong>.</p>";
+    }
     
     if ($lost) {
 	$html .= qq'<p>Denne RFID nøgle kan ikke bruges, fordi den er markeret som tabt, hvis du har fundet den, så klik her: <a href="/hal/account/rfid/$rfid_id?found=1">Fundet!</a></p>';
@@ -636,7 +640,8 @@ sub rfidPage {
 <input type="submit" name="gogogo" value="Skift min PIN kode!">
 </form>';
 
-
+	# TODO: Add name editor
+	
 	if ($p->{gogogo}) {
 	    if ($errors) {
 		$html .= "<p>Hovsa, der er noget galt, prøv igen!</p>";
@@ -667,9 +672,9 @@ sub rfidsPage {
     my $list = '';
     my $lastId = 0;
     my $count = 0;
-    my $rr = db->sql("select id, rfid, pin, lost from rfid where owner_id=? order by id", getSession->{member_id})
+    my $rr = db->sql("select id, rfid, pin, lost, name from rfid where owner_id=? order by id", getSession->{member_id})
 	or die "Failed to fetch list of RFIDs for user";
-    while (my ($id, $rfid, $pin, $lost) = $rr->fetchrow_array) {
+    while (my ($id, $rfid, $pin, $lost, $name) = $rr->fetchrow_array) {
 
 	my $status = '';
 	if ($lost) {
@@ -679,8 +684,8 @@ sub rfidsPage {
 	} else {
 	    $status = qq'Mangler PIN kode'; 
 	}
-
-	$list .= qq'<li><a href="/hal/account/rfid/$id">$rfid [$status]</a></li>';
+	
+	$list .= qq'<li><a href="/hal/account/rfid/$id">$name [$status]</a></li>';
 	$lastId = $id;
 	$count++;
     }

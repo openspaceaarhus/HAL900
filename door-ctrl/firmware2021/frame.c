@@ -9,6 +9,7 @@
 #include "eeprom.h"
 #include "events.h"
 #include "rs485.h"
+#include "gpio.h"
 
 // Just a counter of received messages
 uint16_t rxCount = 0;
@@ -102,6 +103,9 @@ uint8_t createPollResponse(uint8_t *buffer, uint8_t sourceId) {
   // Before this point the buffer contains input, after it contains output.
   memset(buffer, 0xaa, MAX_BUFFER); // This makes it obvious if some parts aren't set
   uint8_t eventBytes = popEvents(lastEvent, buffer+PAYLOAD_INDEX+16+1, 200);
+  if (eventBytes == 0) {
+    return createPollAck(buffer);
+  }
   uint8_t payloadSize = encryptPayload(buffer, eventBytes);
   
   return createReply(buffer, nodeId, sourceId, MT_POLL_RESPONSE, payloadSize);
@@ -115,6 +119,48 @@ uint8_t handlePoll(uint8_t *buffer, uint8_t sourceId, uint8_t targetId) {
   }
 }
 
+
+// Decrypts the payload in-place, the decrypted payload can be found at PAYLOAD_INDEX+17
+uint8_t decryptPayload(uint8_t *buffer) {
+  uint8_t *iv = buffer+PAYLOAD_INDEX;
+  uint8_t rawBytes = buffer[PAYLOAD_INDEX+AES_BLOCK_SIZE]; // Actual plain-text payload size
+  P("Decrypt %d bytes\r\n", rawBytes);
+  uint8_t *data = buffer+PAYLOAD_INDEX+AES_BLOCK_SIZE+1;
+  
+  uint8_t paddedSize = rawBytes+4;
+  
+  aes256cbcInit(nodeKey, iv);
+  uint8_t blockOffset = 0;
+  while (blockOffset < paddedSize) {
+    aes256cbcDecrypt(data+blockOffset);
+    blockOffset += AES_BLOCK_SIZE;
+  }
+    
+  uint32_t actualCrc = crc32(data, rawBytes);
+  uint32_t *plainCrc = (uint32_t *)(data+rawBytes); 
+  
+  return *plainCrc == actualCrc;
+}
+
+
+uint8_t handleOutput(uint8_t *buffer, uint8_t sourceId) {
+  if (!decryptPayload(buffer)) {
+    L("Ignoring bad output payload");
+    return 0;
+  }
+    
+  uint8_t offset = PAYLOAD_INDEX+17; // Start of the decrypted payload
+  uint32_t token;  
+  memcpy(&token,    buffer+offset+1, sizeof(token));
+  uint8_t state0  = buffer[offset+1+4];
+  uint8_t timeout = buffer[offset+1+4+1];
+  uint8_t state1  = buffer[offset+1+4+1+1];
+  
+  gpioSet(token, state0, timeout, state1);
+  
+  buffer[PAYLOAD_INDEX] = buffer[offset]; // Copy the decrypted last event to the location where it's expected.
+  return createPollResponse(buffer, sourceId);
+}
 
 /**
  * Returns the number of bytes placed in the buffer to transmit. 
@@ -149,13 +195,16 @@ uint8_t handleFrame(uint8_t* buffer, uint8_t bufferInUse) {
   
   GPWRITE(RS485_LED, rxCount & 1);
   rxCount++;  
-   
+ 
     
   if (type == MT_POLL) {
     return handlePoll(buffer, sourceId, targetId);
     
   } else if (type == MT_ENROLL_RESPONSE) {
     return handleEnrollResponse(buffer, sourceId, targetId);
+    
+  } else if (type == MT_OUTPUT) {
+    return handleOutput(buffer, sourceId);
     
   } else {
     P("Error: Cannot handle message type %02x, sent from %02x, to %02x with %02x bytes payload\r\n",

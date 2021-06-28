@@ -5,6 +5,7 @@
 #include "leds.h"
 #include "wiegand.h"
 #include "board.h"
+#include "gpio.h"
 
 volatile uint8_t ledsOn;
 volatile uint8_t plexCount;
@@ -57,7 +58,8 @@ ISR(TIMER2_COMPA_vect) {
     plexCount = 0;
   }
 
-  pollWiegandTimeout();
+  pollWiegandTimeout();  
+  gpioTick();
 }
 
 void resetMsTimer(void) {

@@ -95,8 +95,7 @@ void handleReceivedBuffer(void) {
     return;
   }
   
-  // TODO: Use a timer to ensure consistent timing from
-  // end of poll frame to start of response.
+  // Use a timer to ensure consistent timing from end of poll frame to start of response.
   resetMsTimer();
   
   uint8_t responseSize = handleFrame(buffer, bufferInUse);

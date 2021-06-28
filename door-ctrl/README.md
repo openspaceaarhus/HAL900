@@ -158,17 +158,20 @@ If a device gets a set output command with a bad control token, then it will iss
 
 If a device gets a valid token, then it will perform the command and issue a new token.
 
-Payload contains:
+The plain text payload, CRC contains:
 
 | Size | Name | Meaning | 
 | ---- |: ---:| -------:|
+| 1    | last event | The last event seen by the controller, similar to a poll message |
 | 4    | Control Token | The current control token issued by the device |
 | 1    | Set state | The output state to set |
 | 1    | Timeout | The number of seconds to wait before resetting outputs |
 | 1    | Reset state | The state to set after the timeout |
 
+
 This mechanism allows the state to be reset by the device after a certain timeout in case the controller fails.
 
+The reply to a set output message is the same as for a poll
 
 
 

@@ -16,6 +16,7 @@
 #include "events.h"
 #include "leds.h"
 #include "wiegand.h"
+#include "gpio.h"
    
 int main(void) {
   wdt_enable(WDTO_4S);  
@@ -27,6 +28,7 @@ int main(void) {
   initWiegand();
   initLEDs();
   powerUpEvent();
+  gpioInit();
   
   uint16_t lastRxCount = 0;
   while (1) {

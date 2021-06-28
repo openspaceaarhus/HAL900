@@ -22,6 +22,8 @@
 #define MT_ENROLL_RESPONSE 0x02
 #define MT_POLL_ACK 0x03
 #define MT_POLL_RESPONSE 0x04
+#define MT_OUTPUT 0x05
+
 
 void frameInit(void);
 uint8_t handleFrame(uint8_t* buffer, uint8_t bufferInUse);

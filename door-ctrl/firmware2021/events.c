@@ -5,6 +5,7 @@
 #define EV_POWER_UP 0
 #define EV_WIEGAND 1
 #define EV_CTRL_TOKEN 3
+#define EV_CTRL_STATE 4
 #define EV_MSG 5
 
 #define MAX_EVENT_BYTES 500
@@ -40,6 +41,14 @@ void powerUpEvent(void) {
 
 void wiegandInput(struct WiegandData *data) {
   event(EV_WIEGAND, (void *)data, sizeof(WiegandData));   
+}
+
+void controlTokenEvent(uint32_t *token) {
+  event(EV_CTRL_TOKEN, (uint8_t *)token, sizeof(uint32_t));  
+}
+
+void controlStateEvent(uint8_t state) {
+  event(EV_CTRL_STATE, &state, sizeof(state));  
 }
 
 // Skips events older than skipOlder and removes them from the buffer,
