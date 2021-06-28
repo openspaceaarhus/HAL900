@@ -10,18 +10,19 @@ import java.util.logging.Level;
 @Log
 public class Main {
     public static void main(String[] args) {
-        log.info("Going to poll...");
         try {
-            final File stateFile = new File("/tmp/state.yaml");
-            final File serialDevice = new File("/dev/ttyUSB1");
+            final File configFile = new File(System.getProperty("user.home")+"/doorminder.yaml");
+            log.info("Loading config from "+configFile);
+            while (true) {
+                DoorMinderConfig doorMinderConfig = DoorMinderConfig.load(configFile);
+                final StateManager stateManager = new StateManager(doorMinderConfig);
 
+                Poller poller = new Poller(doorMinderConfig.getSerialDevice(), stateManager);
 
-            final StateManager stateManager = new StateManager(stateFile);
-
-            Poller poller = new Poller(serialDevice, stateManager);
-
-            poller.start();
-            poller.join();
+                poller.start();
+                poller.join();
+                log.warning("Poller exited, trying restart");
+            }
 
         } catch (Throwable e) {
             log.log(Level.SEVERE, "Fail!", e);

@@ -2,6 +2,7 @@ package dk.dren.hal.ctrl.comms.frames;
 
 import dk.dren.hal.ctrl.comms.BusDevice;
 import dk.dren.hal.ctrl.comms.ByteBuffer;
+import dk.dren.hal.ctrl.comms.DoorMinder;
 import dk.dren.hal.ctrl.comms.Frame;
 import dk.dren.hal.ctrl.crypto.AES256Key;
 import lombok.Getter;
@@ -17,10 +18,10 @@ public class EnrollResponse {
     private final Frame frame;
     private final BusDevice busDevice;
 
-    static public EnrollResponse create(EnrollRequest request, int firstFreeNodeId) {
+    static public EnrollResponse create(DoorMinder doorMinder, EnrollRequest request, int firstFreeNodeId) {
         final SecretKey secretKey = AES256Key.create();
 
-        final BusDevice busDevice = new BusDevice(firstFreeNodeId, secretKey);
+        final BusDevice busDevice = doorMinder.createBusDevice(firstFreeNodeId, secretKey);
 
         final byte[] aesKeyBytes = secretKey.getEncoded();
         final int payloadSize = request.getTemporaryId().size() + 1 + aesKeyBytes.length;

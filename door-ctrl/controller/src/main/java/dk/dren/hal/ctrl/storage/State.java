@@ -26,7 +26,7 @@ public class State {
     /**
      * rfid ids to the pin, this information comes only from HAL
      */
-    private Map<String, String> rfidToPin = new TreeMap<>();
+    private Map<Long, String> rfidToPin = new TreeMap<>();
 
     /**
      * These are the events that have not yet been sent to HAL

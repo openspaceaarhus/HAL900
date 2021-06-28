@@ -56,14 +56,18 @@ public class Poller {
     public void start() {
         pollThread = new Thread(this::poll);
         pollThread.setName("Poller");
-        pollThread.setDaemon(true);
+        pollThread.setDaemon(false);
         pollThread.start();
     }
 
     private void poll() {
+        long lastReply = System.currentTimeMillis();
         while (true) {
+            final long now = System.currentTimeMillis();
             for (BusDevice bd : deviceById.values()) {
-                rs485.sendAndWaitForReply(bd.getQueryFrame());
+                if (rs485.sendAndWaitForReply(bd.getQueryFrame())) {
+                    lastReply = now;
+                }
             }
 
             final Iterator<EnrollResponse> pendingIterator = pendingEnrollments.iterator();
@@ -72,9 +76,8 @@ public class Poller {
                 final BusDevice bd = pe.getBusDevice();
                 if (bd.getCreated() < bd.getLastPollResponseSeen()) {
                     pendingIterator.remove();
-                    stateManager.addDevice(bd);
                     log.info("Successful enrollment of device #"+bd.getId());
-                } else if (System.currentTimeMillis()-bd.getCreated() > ENROLLMENT_TIMEOUT) {
+                } else if (now -bd.getCreated() > ENROLLMENT_TIMEOUT) {
                     deviceById.remove(bd.getId());
                     pendingIterator.remove();
                     log.info("Timed out enrollment of device #"+bd.getId());
@@ -85,13 +88,28 @@ public class Poller {
 
             // Special handling of enrollment
             enrollmentRequest = null;
-            rs485.sendAndWaitForReply(PollFrame.create(0xff, 0));
+            if (rs485.sendAndWaitForReply(PollFrame.create(0xff, 0))) {
+                lastReply = now;
+            }
             if (enrollmentRequest != null) {
                 log.info("Got "+ enrollmentRequest);
-                final EnrollResponse enrollResponse = EnrollResponse.create(enrollmentRequest, getFirstFreeNodeId());
-                rs485.sendAndWaitForReply(enrollResponse.getFrame());
+                final EnrollResponse enrollResponse = EnrollResponse.create(stateManager, enrollmentRequest, getFirstFreeNodeId());
+                if (rs485.sendAndWaitForReply(enrollResponse.getFrame())) {
+                    lastReply = now;
+                }
                 pendingEnrollments.add(enrollResponse);
                 deviceById.put(enrollResponse.getBusDevice().getId(), enrollResponse.getBusDevice());
+            }
+
+            if (!deviceById.isEmpty()) {
+
+                final long age = TimeUnit.MILLISECONDS.toSeconds(now - lastReply);
+                if (age > 20) {
+                    log.severe("Exiting poller, hoping to be restarted");
+                    return;
+                } else if (age > 10) {
+                    log.warning("No answer from any device in "+age+" seconds!");
+                }
             }
         }
     }
@@ -114,5 +132,6 @@ public class Poller {
 
     public void join() throws InterruptedException {
         pollThread.join();
+        rs485.close();
     }
 }

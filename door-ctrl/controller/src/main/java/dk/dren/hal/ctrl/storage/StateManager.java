@@ -1,18 +1,24 @@
 package dk.dren.hal.ctrl.storage;
 
+import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import dk.dren.hal.ctrl.DoorMinderConfig;
 import dk.dren.hal.ctrl.comms.BusDevice;
+import dk.dren.hal.ctrl.comms.DoorMinder;
 import dk.dren.hal.ctrl.crypto.AES256Key;
 import dk.dren.hal.ctrl.events.DeviceEvent;
+import dk.dren.hal.ctrl.halclient.HAL;
+import dk.dren.hal.ctrl.halclient.HalUser;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 
+import javax.crypto.SecretKey;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -26,16 +32,17 @@ import java.util.stream.Collectors;
  * but once connection is reestablished the state is reconciled with HAL
  */
 @Log
-public class StateManager implements Consumer<DeviceEvent> {
+public class StateManager implements DoorMinder {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/m H:M:S");
     public static final ObjectMapper OM = new ObjectMapper(new YAMLFactory());
+    private final DoorMinderConfig config;
     private State state;
     private final Semaphore dirtyState = new Semaphore(1);
-    private final File stateFile;
     private final Thread syncThread;
+    private HAL hal;
 
-    public StateManager(File stateFile) {
-        this.stateFile = stateFile;
+    public StateManager(DoorMinderConfig config) {
+        this.config = config;
         loadFromFilesystem();
         syncThread = new Thread(this::syncLoop);
         syncThread.setName("Sync thread");
@@ -44,6 +51,7 @@ public class StateManager implements Consumer<DeviceEvent> {
     }
 
     private void storeToFileSystem() throws IOException {
+        File stateFile = config.getStateFile();
         File tmp = File.createTempFile("state-",".yaml", stateFile.getParentFile());
         log.fine(()->"Storing new "+stateFile);
         synchronized (OM) {
@@ -55,6 +63,7 @@ public class StateManager implements Consumer<DeviceEvent> {
     }
 
     private void loadFromFilesystem() {
+        File stateFile = config.getStateFile();
         if (stateFile.exists()) {
             try {
                 synchronized (this) {
@@ -74,7 +83,7 @@ public class StateManager implements Consumer<DeviceEvent> {
      *
      * @param busDevice newly enrolled bus device
      */
-    public void addDevice(BusDevice busDevice) {
+    private void addDevice(BusDevice busDevice) {
         DeviceState ds = new DeviceState(busDevice.getId(),
                 "New @"+millisToString(busDevice.getCreated()),
                 AES256Key.store(busDevice.getSecretKey()));
@@ -91,21 +100,8 @@ public class StateManager implements Consumer<DeviceEvent> {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public synchronized void accept(DeviceEvent deviceEvent) {
-        long timestamp = System.currentTimeMillis();
-        while (state.getEvents().containsKey(timestamp)) {
-            timestamp++;
-        }
-        final String eventAsString = deviceEvent.toData();
-        state.getEvents().put(timestamp, eventAsString);
-        log.info("New event: "+ eventAsString);
-        dirtyState.release(); // Signal to the sync thread that it's time to go to work.
-    }
-
     private BusDevice createBusDevice(DeviceState s) {
-        final BusDevice busDevice = new BusDevice(s.getId(), AES256Key.load(s.getAesKey()));
-        busDevice.setEventConsumer(this);
+        final BusDevice busDevice = new BusDevice(s.getId(), AES256Key.load(s.getAesKey()), this);
         return busDevice;
     }
 
@@ -134,8 +130,88 @@ public class StateManager implements Consumer<DeviceEvent> {
         storeToFileSystem();
 
         // Consolidate with HAL
+        HAL hal = connectToHAL();
+        try {
+            syncUsersFromHal();
+        } catch (Exception e) {
+            hal = null;
+            log.log(Level.WARNING, "HAL sync failed, resetting hal connection", e);
+        }
 
         // Store state on file system if HAL had changes
         storeToFileSystem();
+    }
+
+    private void syncUsersFromHal() throws IOException {
+        final List<HalUser> users = hal.users();
+        synchronized (this) {
+            Set<Long> seen = new TreeSet<>();
+            final Map<Long, String> rfidToPin = state.getRfidToPin();
+            for (HalUser halUser : users) {
+                seen.add(halUser.getRfid());
+                final String oldPin = rfidToPin.get(halUser.getRfid());
+                if (oldPin == null) {
+                    log.info(String.format("New rfid: %x", halUser.getRfid()));
+                    rfidToPin.put(halUser.getRfid(), halUser.getPin());
+                } else if (!oldPin.equals(halUser.getPin())) {
+                    log.info(String.format("Changed pin for rfid: %x", halUser.getRfid()));
+                    rfidToPin.put(halUser.getRfid(), halUser.getPin());
+                }
+            }
+
+            final Iterator<Map.Entry<Long, String>> nuker = rfidToPin.entrySet().iterator();
+            while (nuker.hasNext()) {
+                final Map.Entry<Long, String> goner = nuker.next();
+                if (!seen.contains(goner.getKey())) {
+                    log.info(String.format("Removed rfid: %x", goner.getKey()));
+                    nuker.remove();
+                }
+            }
+        }
+
+    }
+
+    private HAL connectToHAL() throws IOException {
+        if (hal == null) {
+            hal = new HAL(config.getHalUri(), config.getHalUser(), config.getHalPassword());
+            hal.login();
+        }
+        return hal;
+    }
+
+    @Override
+    public BusDevice createBusDevice(int firstFreeNodeId, SecretKey secretKey) {
+        final BusDevice busDevice = new BusDevice(firstFreeNodeId, secretKey, this);
+        addDevice(busDevice);
+        return busDevice;
+    }
+
+    @Override
+    public void recordEvent(DeviceEvent event) {
+        long timestamp = System.currentTimeMillis();
+        while (state.getEvents().containsKey(timestamp)) {
+            timestamp++;
+        }
+        final String eventAsString = event.toData();
+        state.getEvents().put(timestamp, eventAsString);
+        log.info("New event: "+ eventAsString);
+        dirtyState.release(); // Signal to the sync thread that it's time to go to work.
+    }
+
+    @Override
+    public boolean validateCredentials(int deviceId, long rfid, String pin) {
+        final String okPin;
+        synchronized (this) {
+            okPin = state.getRfidToPin().get(rfid);
+        }
+
+        if (okPin == null) {
+            log.info(String.format("Unknown rfid: %d", rfid));
+            return false; // Unknown rfid
+        }
+
+        // TODO: Check if this user has access to the door or not.
+
+        return pin.equals(okPin);
     }
 }

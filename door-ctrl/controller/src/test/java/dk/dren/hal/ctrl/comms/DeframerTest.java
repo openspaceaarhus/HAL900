@@ -15,7 +15,7 @@ import java.util.zip.CRC32;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DeframerTest {
+public class DeframerTest {
 
     private Frame gotFrame;
 

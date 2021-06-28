@@ -29,7 +29,8 @@ sub getDBUser {
 
 sub getDBPassword {
     return $config->{dbPassword} ||'hal900';
-} 
+}
+
 
 # Configure the system from docker conventions
 sub dockerConfig() {
@@ -126,7 +127,7 @@ sub configureHAL {
 
     open K, "<$sf" or die "Failed to read $sf: $!";
     $config->{salt} = join '', <K>;
-    close K;
+    close K;    
 }
 
 BEGIN {

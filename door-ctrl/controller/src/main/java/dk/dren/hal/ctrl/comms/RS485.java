@@ -65,7 +65,7 @@ public class RS485 {
     }
 
     @SneakyThrows
-    private void send(Frame frame, boolean waitForReply) {
+    private boolean send(Frame frame, boolean waitForReply) {
         responseSemaphore.tryAcquire();
         commPort.clearRTS();
         sleep(1);
@@ -81,13 +81,17 @@ public class RS485 {
 
         if (waitForReply) {
             final long t0 = System.currentTimeMillis();
-            if (responseSemaphore.tryAcquire(200, TimeUnit.MILLISECONDS)) {
+            if (responseSemaphore.tryAcquire(300, TimeUnit.MILLISECONDS)) {
                 final long ms = System.currentTimeMillis() - t0;
                 log.fine(()->"Got answer in " + ms + " ms");
+                return true;
             } else {
                 final long ms = System.currentTimeMillis() - t0;
                 log.fine(()->"Got no answer, waited " + ms + " ms");
+                return false;
             }
+        } else {
+            return true;
         }
     }
 
@@ -115,7 +119,11 @@ public class RS485 {
         send(frame, false);
     }
 
-    public void sendAndWaitForReply(Frame frame) {
-        send(frame, true);
+    public boolean sendAndWaitForReply(Frame frame) {
+        return send(frame, true);
+    }
+
+    public void close() {
+        commPort.closePort();
     }
 }
