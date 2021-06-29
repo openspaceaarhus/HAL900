@@ -1,22 +1,24 @@
 package dk.dren.hal.ctrl.comms;
 
+import dk.dren.hal.ctrl.comms.frames.ControlFrame;
 import dk.dren.hal.ctrl.comms.frames.PollFrame;
 import dk.dren.hal.ctrl.comms.frames.PollResponse;
 import dk.dren.hal.ctrl.events.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.java.Log;
 
 import javax.crypto.SecretKey;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 @Log
 @RequiredArgsConstructor
 public class BusDevice {
     public static final long PIN_ENTRY_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
+    private static final int OS_UNLOCK = 1;
+    private static final int OS_WIEGAND_OK = 2;
+    private static final int OS_OUTPUT_MASK = 1+2+4+8;
+
     @Getter
     private final int id;
 
@@ -38,6 +40,12 @@ public class BusDevice {
     private long rfid = 0;
     private String pin = "";
     private long lastWiegandActivity = 0;
+    private byte[] controlToken;
+    private boolean stateChangeArmed;
+    private int desiredOutputState;
+    private byte currentOutputState;
+
+
 
     /**
      * Produce the next output frame for this device
@@ -45,7 +53,12 @@ public class BusDevice {
      * @return
      */
     public Frame getQueryFrame() {
-        return PollFrame.create(getId(), getLastEventSeen());
+        if (desiredOutputState != currentOutputState && stateChangeArmed || controlToken == null) {
+            return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
+        } else {
+            stateChangeArmed = false;
+            return PollFrame.create(getId(), getLastEventSeen());
+        }
     }
 
     /**
@@ -97,6 +110,12 @@ public class BusDevice {
                     }
                 }
             }
+        } else if (event instanceof ControlTokenEvent) {
+            final ControlTokenEvent ctrlToken = (ControlTokenEvent) event;
+            controlToken = ctrlToken.getToken();
+        } else if (event instanceof ControlStateEvent) {
+            final ControlStateEvent ctrlState = (ControlStateEvent) event;
+            currentOutputState = ctrlState.getState();
         }
     }
 
@@ -104,9 +123,8 @@ public class BusDevice {
         log.info(String.format("Trying %x@%s", rfid, pin));
         if (doorMinder.validateCredentials(id, rfid, pin)) {
             sendEvent(new Unlocked(id, rfid));
-
-
-
+            desiredOutputState = OS_UNLOCK | OS_WIEGAND_OK;
+            stateChangeArmed = true;
         }
     }
 

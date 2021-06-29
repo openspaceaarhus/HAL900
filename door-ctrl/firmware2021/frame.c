@@ -148,7 +148,7 @@ uint8_t handleOutput(uint8_t *buffer, uint8_t sourceId) {
     L("Ignoring bad output payload");
     return 0;
   }
-    
+   
   uint8_t offset = PAYLOAD_INDEX+17; // Start of the decrypted payload
   uint32_t token;  
   memcpy(&token,    buffer+offset+1, sizeof(token));
@@ -159,6 +159,7 @@ uint8_t handleOutput(uint8_t *buffer, uint8_t sourceId) {
   gpioSet(token, state0, timeout, state1);
   
   buffer[PAYLOAD_INDEX] = buffer[offset]; // Copy the decrypted last event to the location where it's expected.
+  
   return createPollResponse(buffer, sourceId);
 }
 

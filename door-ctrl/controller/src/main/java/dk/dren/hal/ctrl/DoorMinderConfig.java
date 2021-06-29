@@ -17,6 +17,7 @@ public class DoorMinderConfig {
     public static final ObjectMapper OM = new ObjectMapper(new YAMLFactory());
 
     private File stateFile;
+    private File eventsFile;
     private File serialDevice;
     private URI halUri = URI.create("https://hal.osaa.dk");
     private String halUser = "doorminder";

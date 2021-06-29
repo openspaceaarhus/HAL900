@@ -33,6 +33,7 @@ int main(void) {
   uint16_t lastRxCount = 0;
   while (1) {
     handleReceivedBuffer(); // Puts CPU to sleep if no work to be done.
+    gpioPollTimeout();
     
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {

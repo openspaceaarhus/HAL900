@@ -1,6 +1,5 @@
 package dk.dren.hal.ctrl.storage;
 
-import at.favre.lib.crypto.bcrypt.BCrypt;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import dk.dren.hal.ctrl.DoorMinderConfig;
@@ -15,13 +14,12 @@ import lombok.extern.java.Log;
 
 import javax.crypto.SecretKey;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -34,12 +32,17 @@ import java.util.stream.Collectors;
 @Log
 public class StateManager implements DoorMinder {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/m H:M:S");
-    public static final ObjectMapper OM = new ObjectMapper(new YAMLFactory());
+    private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
     private final DoorMinderConfig config;
     private State state;
     private final Semaphore dirtyState = new Semaphore(1);
     private final Thread syncThread;
     private HAL hal;
+
+    /**
+     * These are the events that have not yet been written to the FS
+     */
+    private final Map<Long, String> events = new TreeMap<>();
 
     public StateManager(DoorMinderConfig config) {
         this.config = config;
@@ -54,8 +57,8 @@ public class StateManager implements DoorMinder {
         File stateFile = config.getStateFile();
         File tmp = File.createTempFile("state-",".yaml", stateFile.getParentFile());
         log.fine(()->"Storing new "+stateFile);
-        synchronized (OM) {
-            OM.writeValue(tmp, state);
+        synchronized (this) {
+            YAML.writeValue(tmp, state);
         }
         if (!tmp.renameTo(stateFile)) {
             throw new RuntimeException("Failed to rename "+tmp+" to "+stateFile);
@@ -67,7 +70,7 @@ public class StateManager implements DoorMinder {
         if (stateFile.exists()) {
             try {
                 synchronized (this) {
-                    state = OM.readValue(stateFile, State.class);
+                    state = YAML.readValue(stateFile, State.class);
                 }
                 return;
             } catch (Exception e) {
@@ -126,6 +129,7 @@ public class StateManager implements DoorMinder {
     }
 
     private void sync() throws IOException {
+        flushEventsToFileSystem();
         // Store state on file system
         storeToFileSystem();
 
@@ -140,6 +144,23 @@ public class StateManager implements DoorMinder {
 
         // Store state on file system if HAL had changes
         storeToFileSystem();
+    }
+
+    private void flushEventsToFileSystem() {
+        synchronized (events) {
+            try (final FileWriter appender = new FileWriter(config.getEventsFile(), true)) {
+                for (Map.Entry<Long, String> timestampAndEvent : events.entrySet()) {
+                    appender.append(timestampAndEvent.getKey().toString())
+                            .append("\t")
+                            .append(timestampAndEvent.getValue())
+                            .append("\n");
+                }
+            } catch (IOException e) {
+                log.log(Level.SEVERE, "Failed while appending to "+config.getEventsFile(), e);
+                return;
+            }
+            events.clear();
+        }
     }
 
     private void syncUsersFromHal() throws IOException {
@@ -168,7 +189,6 @@ public class StateManager implements DoorMinder {
                 }
             }
         }
-
     }
 
     private HAL connectToHAL() throws IOException {
@@ -188,14 +208,16 @@ public class StateManager implements DoorMinder {
 
     @Override
     public void recordEvent(DeviceEvent event) {
-        long timestamp = System.currentTimeMillis();
-        while (state.getEvents().containsKey(timestamp)) {
-            timestamp++;
+        synchronized (events) {
+            long timestamp = System.currentTimeMillis();
+            while (events.containsKey(timestamp)) {
+                timestamp++;
+            }
+            final String eventAsString = event.toData();
+            events.put(timestamp, eventAsString);
+            log.info("New event: " + eventAsString);
+            dirtyState.release(); // Signal to the sync thread that it's time to go to work.
         }
-        final String eventAsString = event.toData();
-        state.getEvents().put(timestamp, eventAsString);
-        log.info("New event: "+ eventAsString);
-        dirtyState.release(); // Signal to the sync thread that it's time to go to work.
     }
 
     @Override

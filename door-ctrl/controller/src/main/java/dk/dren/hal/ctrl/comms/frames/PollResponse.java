@@ -1,21 +1,17 @@
 package dk.dren.hal.ctrl.comms.frames;
 
 import dk.dren.hal.ctrl.comms.ByteBuffer;
-import dk.dren.hal.ctrl.comms.Deframer;
 import dk.dren.hal.ctrl.comms.Frame;
+import dk.dren.hal.ctrl.crypto.PayloadDecryptor;
 import dk.dren.hal.ctrl.events.BinaryEventParser;
 import dk.dren.hal.ctrl.events.DeviceEvent;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 
-import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import java.security.AlgorithmParameters;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.CRC32;
 
 @RequiredArgsConstructor
 @Getter
@@ -32,7 +28,8 @@ public class PollResponse {
         // 16 bytes of IV
         // 1 byte of actual payload size sans padding
         // data
-
+        PayloadDecryptor pd = new PayloadDecryptor(payload, aesKey);
+/*
         final Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");
         aes.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(payload.toArray(0, 16)));
         final byte unpaddedSize = payload.get(16);
@@ -47,9 +44,11 @@ public class PollResponse {
             throw new IllegalArgumentException(String.format("Bad crc: %08x vs %08x",
                     crc32FromText, crc32.getValue()));
         }
-
+*/
         List<DeviceEvent> events = new ArrayList<>();
         int pos = 0;
+        int unpaddedSize = pd.getUnpaddedSize();
+        final ByteBuffer plainText = pd.getPlainText();
         while (pos < unpaddedSize) {
             final byte type = plainText.get(pos);
             final byte counter = plainText.get(pos + 1);

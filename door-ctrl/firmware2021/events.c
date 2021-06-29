@@ -4,8 +4,8 @@
 
 #define EV_POWER_UP 0
 #define EV_WIEGAND 1
-#define EV_CTRL_TOKEN 3
-#define EV_CTRL_STATE 4
+#define EV_CTRL_STATE 3
+#define EV_CTRL_TOKEN 4
 #define EV_MSG 5
 
 #define MAX_EVENT_BYTES 500
