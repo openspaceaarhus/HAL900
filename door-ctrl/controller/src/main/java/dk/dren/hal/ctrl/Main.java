@@ -13,16 +13,14 @@ public class Main {
         try {
             final File configFile = new File(System.getProperty("user.home")+"/doorminder.yaml");
             log.info("Loading config from "+configFile);
-            while (true) {
-                DoorMinderConfig doorMinderConfig = DoorMinderConfig.load(configFile);
-                final StateManager stateManager = new StateManager(doorMinderConfig);
+            DoorMinderConfig doorMinderConfig = DoorMinderConfig.load(configFile);
+            final StateManager stateManager = new StateManager(doorMinderConfig);
 
-                Poller poller = new Poller(doorMinderConfig.getSerialDevice(), stateManager);
+            Poller poller = new Poller(doorMinderConfig.getSerialDevice(), stateManager);
 
-                poller.start();
-                poller.join();
-                log.warning("Poller exited, trying restart");
-            }
+            poller.start();
+            poller.join();
+            log.warning("Poller exited");
 
         } catch (Throwable e) {
             log.log(Level.SEVERE, "Fail!", e);

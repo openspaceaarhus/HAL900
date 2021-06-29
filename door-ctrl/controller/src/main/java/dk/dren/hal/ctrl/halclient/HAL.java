@@ -3,7 +3,10 @@ package dk.dren.hal.ctrl.halclient;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
+import lombok.extern.java.Log;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
@@ -17,6 +20,7 @@ import java.util.List;
 /**
  * HAL API for the bits we need
  */
+@Log
 @RequiredArgsConstructor
 public class HAL {
     private final URI uri;
@@ -58,6 +62,18 @@ public class HAL {
         return response.body();
     }
 
+    public boolean sendEvents(byte[] contentToSend) throws IOException {
+        final RequestBody requestBody = RequestBody.create(MediaType.parse("text/plain"), contentToSend);
+        final Response<ResponseBody> response = getApi().events(requestBody).execute();
+        if (!response.isSuccessful()) {
+            return false;
+        }
+        final String responseBody = response.body().string();
+        if (responseBody.equals("Ok")) {
+            return true;
+        }
 
-
+        log.warning("HAL did not accept the log entries: "+responseBody);
+        return false;
+    }
 }

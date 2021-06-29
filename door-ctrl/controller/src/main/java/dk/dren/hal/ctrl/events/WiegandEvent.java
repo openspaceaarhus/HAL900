@@ -55,23 +55,18 @@ public class WiegandEvent implements DeviceEvent {
     }
 
     @Override
-    public String toData() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(deviceId).append("\t").append(TYPE).append("\t").append(eventNumber).append("\t").append(data).append("\t");
-        sb.append(String.format("Wiegand %d bits: 0x%x (%s)", bits, data, bytesToHexString(rawData)));
-        return sb.toString();
+    public String getText() {
+        return String.format("Wiegand %d bits: 0x%x", bits, data);
     }
 
-    private String bytesToHexString(byte[] rawData) {
-        StringBuilder sb = new StringBuilder();
+    @Override
+    public boolean isLoggedRemotely() {
+        return true;
+    }
 
-        String sep = "";
-        for (byte rb : rawData) {
-            sb.append(sep).append(String.format("%02x", rb));
-            sep = " ";
-        }
-
-        return sb.toString();
+    @Override
+    public Long getData() {
+        return data;
     }
 
     public boolean isKeyPress() {

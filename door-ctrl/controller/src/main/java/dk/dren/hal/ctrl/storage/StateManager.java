@@ -6,13 +6,16 @@ import dk.dren.hal.ctrl.DoorMinderConfig;
 import dk.dren.hal.ctrl.comms.BusDevice;
 import dk.dren.hal.ctrl.comms.DoorMinder;
 import dk.dren.hal.ctrl.crypto.AES256Key;
+import dk.dren.hal.ctrl.events.ControllerStartEvent;
 import dk.dren.hal.ctrl.events.DeviceEvent;
 import dk.dren.hal.ctrl.halclient.HAL;
 import dk.dren.hal.ctrl.halclient.HalUser;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
+import org.apache.commons.io.FileUtils;
 
 import javax.crypto.SecretKey;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -25,7 +28,7 @@ import java.util.stream.Collectors;
 
 /**
  * Starts a thread that periodically synchronizes the state with the local file system and HAL.
- *
+ * <p>
  * Everything is written to local storage so disconnected operation is possible
  * but once connection is reestablished the state is reconciled with HAL
  */
@@ -33,20 +36,25 @@ import java.util.stream.Collectors;
 public class StateManager implements DoorMinder {
     public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/m H:M:S");
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
+    public static final long MINIMUM_HAL_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(30);
+    private static final long MINIMUM_EVENT_PUSH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
     private final DoorMinderConfig config;
     private State state;
     private final Semaphore dirtyState = new Semaphore(1);
     private final Thread syncThread;
-    private HAL hal;
+    private HAL _hal;
 
     /**
      * These are the events that have not yet been written to the FS
      */
     private final Map<Long, String> events = new TreeMap<>();
+    private long lastStateSyncWithHAL;
+    private long lastEventPush;
 
     public StateManager(DoorMinderConfig config) {
         this.config = config;
         loadFromFilesystem();
+        recordEvent(new ControllerStartEvent());
         syncThread = new Thread(this::syncLoop);
         syncThread.setName("Sync thread");
         syncThread.setDaemon(true);
@@ -54,15 +62,29 @@ public class StateManager implements DoorMinder {
     }
 
     private void storeToFileSystem() throws IOException {
-        File stateFile = config.getStateFile();
-        File tmp = File.createTempFile("state-",".yaml", stateFile.getParentFile());
-        log.fine(()->"Storing new "+stateFile);
+        ByteArrayOutputStream yamlBytes = new ByteArrayOutputStream();
         synchronized (this) {
-            YAML.writeValue(tmp, state);
+            YAML.writeValue(yamlBytes, state);
         }
-        if (!tmp.renameTo(stateFile)) {
-            throw new RuntimeException("Failed to rename "+tmp+" to "+stateFile);
+
+        File stateFile = config.getStateFile();
+        if (isContentsOfFileDifferent(stateFile, yamlBytes.toByteArray())) {
+            File tmp = File.createTempFile("state-", ".yaml", stateFile.getParentFile());
+            log.fine(() -> "Storing new " + stateFile);
+            FileUtils.writeByteArrayToFile(tmp, yamlBytes.toByteArray());
+
+            if (!tmp.renameTo(stateFile)) {
+                throw new RuntimeException("Failed to rename " + tmp + " to " + stateFile);
+            }
         }
+    }
+
+    private boolean isContentsOfFileDifferent(File file, byte[] content) throws IOException {
+        if (!file.exists()) {
+            return true;
+        }
+        final byte[] fileContent = FileUtils.readFileToByteArray(file);
+        return !Arrays.equals(fileContent, content);
     }
 
     private void loadFromFilesystem() {
@@ -74,7 +96,7 @@ public class StateManager implements DoorMinder {
                 }
                 return;
             } catch (Exception e) {
-                log.log(Level.SEVERE, "Failed while loading "+stateFile, e);
+                log.log(Level.SEVERE, "Failed while loading " + stateFile, e);
             }
         }
 
@@ -88,11 +110,11 @@ public class StateManager implements DoorMinder {
      */
     private void addDevice(BusDevice busDevice) {
         DeviceState ds = new DeviceState(busDevice.getId(),
-                "New @"+millisToString(busDevice.getCreated()),
+                "New @" + millisToString(busDevice.getCreated()),
                 AES256Key.store(busDevice.getSecretKey()));
 
         synchronized (this) {
-            state.getDevices().put(ds.getId(),ds);
+            state.getDevices().put(ds.getId(), ds);
         }
         dirtyState.release(); // Signal to the sync thread that it's time to go to work.
     }
@@ -118,36 +140,54 @@ public class StateManager implements DoorMinder {
     private void syncLoop() {
         while (true) {
             final int dirt = dirtyState.drainPermits();
-            log.fine(()->"Syncing "+dirt+" changes");
+            log.fine(() -> "Syncing " + dirt + " changes");
             try {
                 sync();
             } catch (Exception e) {
-                log.log(Level.SEVERE, "Got exception while syncing",e);
+                log.log(Level.SEVERE, "Got exception while syncing", e);
             }
-            dirtyState.tryAcquire(30, TimeUnit.SECONDS); // Sleep until time has passed or there's work to be done.
+            dirtyState.tryAcquire(MINIMUM_HAL_SYNC_INTERVAL, TimeUnit.MILLISECONDS); // Sleep until time has passed or there's work to be done.
         }
     }
 
     private void sync() throws IOException {
+        final long now = System.currentTimeMillis();
         flushEventsToFileSystem();
+
         // Store state on file system
         storeToFileSystem();
 
-        // Consolidate with HAL
-        HAL hal = connectToHAL();
-        try {
-            syncUsersFromHal();
-        } catch (Exception e) {
-            hal = null;
-            log.log(Level.WARNING, "HAL sync failed, resetting hal connection", e);
+        if (now-lastEventPush > MINIMUM_EVENT_PUSH_INTERVAL) {
+            try {
+                syncEventsToHal();
+            } catch (Exception e) {
+                _hal = null;
+                log.log(Level.WARNING, "Failed to push events to HAL", e);
+            }
+            lastEventPush = now;
         }
 
-        // Store state on file system if HAL had changes
-        storeToFileSystem();
+        // Consolidate with HAL
+        try {
+            if (now - lastStateSyncWithHAL >= MINIMUM_HAL_SYNC_INTERVAL) {
+                syncUsersFromHal();
+                lastStateSyncWithHAL = now; // Yes, we want to keep the interval, even if the sync failed.
+
+                // Store state on file system if HAL had changes
+                storeToFileSystem();
+            }
+        } catch (Exception e) {
+            _hal = null;
+            log.log(Level.WARNING, "HAL sync failed, resetting hal connection", e);
+            lastStateSyncWithHAL = now; // Yes, we want to keep the interval, even if the sync failed.
+        }
     }
 
     private void flushEventsToFileSystem() {
         synchronized (events) {
+            if (events.isEmpty()) {
+                return;
+            }
             try (final FileWriter appender = new FileWriter(config.getEventsFile(), true)) {
                 for (Map.Entry<Long, String> timestampAndEvent : events.entrySet()) {
                     appender.append(timestampAndEvent.getKey().toString())
@@ -156,14 +196,36 @@ public class StateManager implements DoorMinder {
                             .append("\n");
                 }
             } catch (IOException e) {
-                log.log(Level.SEVERE, "Failed while appending to "+config.getEventsFile(), e);
+                log.log(Level.SEVERE, "Failed while appending to " + config.getEventsFile(), e);
                 return;
             }
             events.clear();
         }
     }
 
+    private void syncEventsToHal() throws IOException {
+        final File eventsFile = config.getEventsFile();
+        File transmitting = new File(eventsFile.getParentFile(), eventsFile.getName() + ".transmitting");
+        if (!transmitting.exists()) {
+            synchronized (events) {
+                if (eventsFile.exists() && eventsFile.length() > 0) {
+                    if (!eventsFile.renameTo(transmitting)) {
+                        throw new IOException("Failed to rename " + eventsFile + " to " + transmitting);
+                    }
+                } else {
+                    return; // Nothing to do.
+                }
+            }
+        }
+
+        final byte[] contentToSend = FileUtils.readFileToByteArray(transmitting);
+        if (getHAL().sendEvents(contentToSend)) {
+            transmitting.delete();
+        }
+    }
+
     private void syncUsersFromHal() throws IOException {
+        final HAL hal = getHAL();
         final List<HalUser> users = hal.users();
         synchronized (this) {
             Set<Long> seen = new TreeSet<>();
@@ -191,12 +253,12 @@ public class StateManager implements DoorMinder {
         }
     }
 
-    private HAL connectToHAL() throws IOException {
-        if (hal == null) {
-            hal = new HAL(config.getHalUri(), config.getHalUser(), config.getHalPassword());
-            hal.login();
+    private HAL getHAL() throws IOException {
+        if (_hal == null) {
+            _hal = new HAL(config.getHalUri(), config.getHalUser(), config.getHalPassword());
+            _hal.login();
         }
-        return hal;
+        return _hal;
     }
 
     @Override
@@ -213,10 +275,22 @@ public class StateManager implements DoorMinder {
             while (events.containsKey(timestamp)) {
                 timestamp++;
             }
-            final String eventAsString = event.toData();
-            events.put(timestamp, eventAsString);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(event.getDeviceId()).append("\t")
+                    .append(event.getType()).append("\t")
+                    .append(event.getEventNumber()).append("\t");
+            if (event.getData() != null) {
+                sb.append(event.getData()).append("\t");
+            }
+            sb.append(event.getText());
+            String eventAsString = sb.toString();
             log.info("New event: " + eventAsString);
-            dirtyState.release(); // Signal to the sync thread that it's time to go to work.
+
+            if (event.isLoggedRemotely()) {
+                events.put(timestamp, eventAsString);
+                dirtyState.release(); // Signal to the sync thread that it's time to go to work.
+            }
         }
     }
 

@@ -46,11 +46,11 @@ public class Frame {
     private final byte type;
     private final ByteBuffer payload;
 
-    public static int getCrc32Index(byte payloadSize) {
+    public static int getCrc32Index(int payloadSize) {
         return Frame.PAYLOAD_INDEX + payloadSize;
     }
 
-    public static int getEndSentinelIndex(byte payloadSize) {
+    public static int getEndSentinelIndex(int payloadSize) {
         return getCrc32Index(payloadSize) + CRC32_SIZE;
     }
 

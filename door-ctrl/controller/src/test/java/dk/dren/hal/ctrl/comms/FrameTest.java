@@ -26,4 +26,11 @@ class FrameTest {
         Assert.assertEquals(0xd202ef8d, crc32value);
     }
 
+    @Test
+    public void crcIndex() {
+        Assert.assertEquals(5, Frame.getCrc32Index(0));
+        Assert.assertEquals(205, Frame.getCrc32Index(200));
+
+    }
+
 }

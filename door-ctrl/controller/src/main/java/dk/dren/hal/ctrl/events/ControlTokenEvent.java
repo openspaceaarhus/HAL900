@@ -17,10 +17,17 @@ public class ControlTokenEvent implements DeviceEvent {
     }
 
     @Override
-    public String toData() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(deviceId).append("\t").append(TYPE).append("\t").append(eventNumber).append("\t");
-        sb.append(String.format("New token: %x %x %x %x", token[0], token[1], token[2], token[3]));
-        return sb.toString();
+    public Long getData() {
+        return null;
+    }
+
+    @Override
+    public String getText() {
+        return String.format("New token: %x %x %x %x", token[0], token[1], token[2], token[3]);
+    }
+
+    @Override
+    public boolean isLoggedRemotely() {
+        return false;
     }
 }

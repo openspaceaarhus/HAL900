@@ -21,10 +21,17 @@ public class ControlStateEvent implements DeviceEvent {
     }
 
     @Override
-    public String toData() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(deviceId).append("\t").append(TYPE).append("\t").append(eventNumber).append("\t");
-        sb.append(String.format("New GPIO state: %x", state));
-        return sb.toString();
+    public Long getData() {
+        return ((long)state)&0xff;
+    }
+
+    @Override
+    public String getText() {
+        return String.format("New GPIO state: %x", state);
+    }
+
+    @Override
+    public boolean isLoggedRemotely() {
+        return true;
     }
 }

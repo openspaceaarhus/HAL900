@@ -5,12 +5,15 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class UserTimeout implements DeviceEvent {
-    private final int deviceId;
+public class ControllerStartEvent implements DeviceEvent {
+    @Override
+    public int getDeviceId() {
+        return 0;
+    }
 
     @Override
     public int getType() {
-        return 0xff;
+        return 0xff-2;
     }
 
     @Override
@@ -25,7 +28,7 @@ public class UserTimeout implements DeviceEvent {
 
     @Override
     public String getText() {
-        return "User timeout";
+        return "Controller Start";
     }
 
     @Override

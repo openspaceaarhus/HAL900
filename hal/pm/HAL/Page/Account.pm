@@ -594,7 +594,7 @@ sub rfidPage {
 	my ($v,$p,$name) = @_;
 	if (length($v)<5) {
 	    $errors++;
-	    return "Din PIN kode skal være mindst 5 cifre langt";
+	    return "Din PIN kode skal være mindst 5 cifre lang";
 	}
 	if ($v !~ /^\d+$/) {
 	    $errors++;

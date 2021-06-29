@@ -2,6 +2,7 @@ package dk.dren.hal.ctrl.comms;
 
 import lombok.extern.java.Log;
 
+import javax.print.attribute.standard.MediaSize;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.zip.CRC32;
@@ -46,7 +47,11 @@ public class Deframer {
     public void addByte(byte input) {
         buffer.add(input);
         if (input == Frame.END_SENTINEL || buffer.isFull()) {
-            tryParse();
+            try {
+                tryParse();
+            } catch (Throwable e) {
+                log.log(Level.SEVERE, "Ignoring exception while trying to parse buffer", e);
+            }
         }
     }
 
@@ -72,13 +77,19 @@ public class Deframer {
             return; // Not enough bytes to make up a full frame, but there was a start sentinel, so just punt
         }
 
-        final byte payloadSize = buffer.get(Frame.PAYLOAD_SIZE_INDEX);
+        final int payloadSize = buffer.get(Frame.PAYLOAD_SIZE_INDEX) & 0xff;
+        if (payloadSize < 0) {
+            throw new IllegalArgumentException("Payload size should not be negative: "+payloadSize);
+        }
         if (buffer.size() < Frame.MINIMUM_BYTES_IN_FRAME+payloadSize) {
             log.fine(()->"Not enough bytes yet "+buffer.size()+" < "+ Frame.MINIMUM_BYTES_IN_FRAME+payloadSize+" payload="+payloadSize);
             return; // Not enough bytes to make up a full frame including payload
         }
 
         final int endSentinelIndex = Frame.getEndSentinelIndex(payloadSize);
+        if (endSentinelIndex < 0) {
+            throw new IllegalArgumentException("End sentinel index should not be negative: "+endSentinelIndex);
+        }
         final byte endSentinel = buffer.get(endSentinelIndex);
         if (endSentinel != Frame.END_SENTINEL) {
             log.fine(()->"Did not find an end sentinel at offset "+endSentinelIndex+": "+endSentinel+" != "+ Frame.END_SENTINEL);

@@ -4,5 +4,7 @@ public interface DeviceEvent {
     int getDeviceId();
     int getType();
     int getEventNumber();
-    String toData();
+    Long getData();
+    String getText();
+    boolean isLoggedRemotely();
 }

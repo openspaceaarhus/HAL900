@@ -73,7 +73,8 @@ insert into access_event_type (id, name) values (255, 'User timeout');
 create table access_device (
    id int primary key,
    created timestamp default now() not null,
-   name varchar not null
+   name varchar not null,
+   aesKey varchar not null
 );
 
 create table access_event (
@@ -81,10 +82,10 @@ create table access_event (
    created_hal timestamp default now() not null,
    created_remote timestamp unique not null,
    device_id int references access_device(id) not null,  
-   access_event_type int references access_event(id) not null,
+   access_event_type int references access_event_type(id) not null,
    event_number int not null,
    wiegand_data bigint,
-   varchar text not null
+   event_text varchar not null
 );
 
 commit;

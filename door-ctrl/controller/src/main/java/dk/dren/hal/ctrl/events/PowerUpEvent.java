@@ -17,7 +17,18 @@ public class PowerUpEvent implements DeviceEvent {
         return TYPE;
     }
 
-    public String toData() {
-        return deviceId + "\t" + TYPE + "\t" + eventNumber + "\t" + "Power up";
+    @Override
+    public Long getData() {
+        return null;
+    }
+
+    @Override
+    public String getText() {
+        return "Power up";
+    }
+
+    @Override
+    public boolean isLoggedRemotely() {
+        return true;
     }
 }

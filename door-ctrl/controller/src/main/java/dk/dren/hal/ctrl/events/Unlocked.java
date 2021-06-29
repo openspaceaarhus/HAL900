@@ -20,7 +20,17 @@ public class Unlocked implements DeviceEvent {
     }
 
     @Override
-    public String toData() {
-        return deviceId + "\t" + getType() + "\t" + getEventNumber() + "\t"+rfid+"\t" + String.format("Unlocked for rfid:%x", rfid);
+    public Long getData() {
+        return rfid;
+    }
+
+    @Override
+    public String getText() {
+        return String.format("Unlocked for rfid:%x", rfid);
+    }
+
+    @Override
+    public boolean isLoggedRemotely() {
+        return true;
     }
 }
