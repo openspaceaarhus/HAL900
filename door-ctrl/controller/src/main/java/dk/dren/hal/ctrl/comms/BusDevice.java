@@ -16,8 +16,9 @@ import java.util.concurrent.TimeUnit;
 public class BusDevice {
     public static final long PIN_ENTRY_TIMEOUT = TimeUnit.SECONDS.toMillis(10);
     private static final int OS_UNLOCK = 1;
-    private static final int OS_WIEGAND_OK = 2;
-    private static final int OS_OUTPUT_MASK = 1+2+4+8;
+    private static final int OS_WIEGAND_OK = 4;
+    private static final int OS_OUTPUT_MASK = 0x0f;
+    public static final int TIME_TO_KEEP_UNLOCKED = 20;
 
     @Getter
     private final int id;
@@ -44,7 +45,7 @@ public class BusDevice {
     private boolean stateChangeArmed;
     private int desiredOutputState;
     private byte currentOutputState;
-
+    private long lockTime;
 
 
     /**
@@ -53,10 +54,15 @@ public class BusDevice {
      * @return
      */
     public Frame getQueryFrame() {
-        if (desiredOutputState != currentOutputState && stateChangeArmed || controlToken == null) {
+        if (lockTime != 0 && System.currentTimeMillis()-lockTime > TimeUnit.SECONDS.toMillis(TIME_TO_KEEP_UNLOCKED)) {
+            doorMinder.recordEvent(new LockEvent(id));
+            desiredOutputState = 0;
+            lockTime = 0;
+        }
+        if (desiredOutputState != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
+            log.info(String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
             return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
         } else {
-            stateChangeArmed = false;
             return PollFrame.create(getId(), getLastEventSeen());
         }
     }
@@ -101,6 +107,7 @@ public class BusDevice {
                 if (we.isKeyPress()) {
                     if (we.getData() < 0 || we.getData() > 9) {
                         resetInputState();
+                        desiredOutputState = 0;
                     } else {
                         lastWiegandActivity = System.currentTimeMillis();
                         pin += String.format("%d", we.getData());
@@ -109,10 +116,13 @@ public class BusDevice {
                         }
                     }
                 }
+            } else if (we.isKeyPress() && we.getData() > 9) {
+                desiredOutputState = 0;
             }
         } else if (event instanceof ControlTokenEvent) {
             final ControlTokenEvent ctrlToken = (ControlTokenEvent) event;
             controlToken = ctrlToken.getToken();
+
         } else if (event instanceof ControlStateEvent) {
             final ControlStateEvent ctrlState = (ControlStateEvent) event;
             currentOutputState = ctrlState.getState();
@@ -120,11 +130,12 @@ public class BusDevice {
     }
 
     private void tryPin() {
-        log.info(String.format("Trying %x@%s", rfid, pin));
+        log.fine(()->String.format("Trying %x@%s", rfid, pin));
         if (doorMinder.validateCredentials(id, rfid, pin)) {
             sendEvent(new Unlocked(id, rfid));
             desiredOutputState = OS_UNLOCK | OS_WIEGAND_OK;
-            stateChangeArmed = true;
+            lockTime = System.currentTimeMillis()+ TIME_TO_KEEP_UNLOCKED;
+            resetInputState();
         }
     }
 

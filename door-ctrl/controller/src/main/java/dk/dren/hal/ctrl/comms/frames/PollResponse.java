@@ -50,9 +50,9 @@ public class PollResponse {
         int unpaddedSize = pd.getUnpaddedSize();
         final ByteBuffer plainText = pd.getPlainText();
         while (pos < unpaddedSize) {
-            final byte type = plainText.get(pos);
-            final byte counter = plainText.get(pos + 1);
-            final byte size = plainText.get(pos + 2);
+            final int type    = 0xff & plainText.get(pos);
+            final int counter = 0xff & plainText.get(pos + 1);
+            final int size    = 0xff & plainText.get(pos + 2);
             DeviceEvent e = BinaryEventParser.parse(deviceId, type, counter, plainText.toArray(pos+3, size));
             events.add(e);
             pos += 3+size;

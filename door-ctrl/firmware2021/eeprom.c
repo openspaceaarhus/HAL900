@@ -54,6 +54,6 @@ void eepromRead(uint8_t *nodeId, uint8_t *nodeKey) {
   *nodeId = config[0];
   memcpy(nodeKey, config+1, AES_KEY_SIZE);
   
-  P("Loaded config node=%02x\r\n", *nodeId); 
+  //P("Loaded config node=%02x\r\n", *nodeId); 
 }
 

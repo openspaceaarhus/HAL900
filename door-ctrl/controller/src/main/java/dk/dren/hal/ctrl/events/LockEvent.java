@@ -3,17 +3,19 @@ package dk.dren.hal.ctrl.events;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
 @RequiredArgsConstructor
-public class ControlTokenEvent implements DeviceEvent {
-    public static final byte TYPE = 0x4;
+@Getter
+public class LockEvent implements DeviceEvent {
     private final int deviceId;
-    private final int eventNumber;
-    private final byte[] token;
 
     @Override
     public int getType() {
-        return TYPE;
+        return 0xff-3;
+    }
+
+    @Override
+    public int getEventNumber() {
+        return 0xff;
     }
 
     @Override
@@ -23,11 +25,11 @@ public class ControlTokenEvent implements DeviceEvent {
 
     @Override
     public String getText() {
-        return String.format("New token: %x %x %x %x", token[3], token[2], token[1], token[0]);
+        return String.format("Locked");
     }
 
     @Override
     public boolean isLoggedRemotely() {
-        return false;
+        return true;
     }
 }

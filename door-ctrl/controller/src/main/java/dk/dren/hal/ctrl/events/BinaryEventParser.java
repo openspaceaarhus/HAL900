@@ -2,7 +2,7 @@ package dk.dren.hal.ctrl.events;
 
 public class BinaryEventParser {
 
-    public static DeviceEvent parse(int deviceId, byte type, byte counter, byte[] data) {
+    public static DeviceEvent parse(int deviceId, int type, int counter, byte[] data) {
         if (type == PowerUpEvent.TYPE) {
             return new PowerUpEvent(deviceId, counter);
         } else if (type == WiegandEvent.TYPE) {

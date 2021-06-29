@@ -61,7 +61,7 @@ public class RS485 {
     }
 
     private int timeToTransmit(int bytes) {
-        return (bytes*15*1000)/BAUD;
+        return (bytes*10*1000)/BAUD;
     }
 
     @SneakyThrows

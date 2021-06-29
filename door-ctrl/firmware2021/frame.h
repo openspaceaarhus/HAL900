@@ -28,4 +28,4 @@
 void frameInit(void);
 uint8_t handleFrame(uint8_t* buffer, uint8_t bufferInUse);
 uint16_t frameRxCount(void);
-
+uint8_t getNodeId();

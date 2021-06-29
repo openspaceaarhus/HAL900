@@ -27,6 +27,10 @@ void frameInit(void) {
   GPOUTPUT(RS485_LED);
 }
 
+uint8_t getNodeId(void) {
+  return nodeId;
+}
+
 uint8_t createReply(uint8_t *buffer, uint8_t sourceId, uint8_t targetId, uint8_t type, uint8_t payloadSize) {
   
   buffer[SOURCE_ID_INDEX] = sourceId;
@@ -124,7 +128,7 @@ uint8_t handlePoll(uint8_t *buffer, uint8_t sourceId, uint8_t targetId) {
 uint8_t decryptPayload(uint8_t *buffer) {
   uint8_t *iv = buffer+PAYLOAD_INDEX;
   uint8_t rawBytes = buffer[PAYLOAD_INDEX+AES_BLOCK_SIZE]; // Actual plain-text payload size
-  P("Decrypt %d bytes\r\n", rawBytes);
+  //P("Decrypt %d bytes\r\n", rawBytes);
   uint8_t *data = buffer+PAYLOAD_INDEX+AES_BLOCK_SIZE+1;
   
   uint8_t paddedSize = rawBytes+4;

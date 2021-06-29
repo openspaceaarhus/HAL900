@@ -2,8 +2,6 @@ package dk.dren.hal.ctrl.events;
 
 import lombok.Getter;
 
-import java.util.Arrays;
-
 @Getter
 public class WiegandEvent implements DeviceEvent {
     public static final int TYPE=0x01;
@@ -20,7 +18,7 @@ public class WiegandEvent implements DeviceEvent {
     private final long data;
     private final byte[] rawData;
 
-    public WiegandEvent(int deviceId, byte counter, byte[] data) {
+    public WiegandEvent(int deviceId, int counter, byte[] data) {
         this.deviceId = deviceId;
         this.eventNumber = counter;
         this.bits = data[0];

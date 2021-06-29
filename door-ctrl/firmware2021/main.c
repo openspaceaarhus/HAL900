@@ -30,6 +30,7 @@ int main(void) {
   powerUpEvent();
   gpioInit();
   
+  uint8_t fresh = 1;
   uint16_t lastRxCount = 0;
   while (1) {
     handleReceivedBuffer(); // Puts CPU to sleep if no work to be done.
@@ -38,11 +39,13 @@ int main(void) {
     uint16_t thisRx = frameRxCount();
     if (thisRx != lastRxCount) {
       wdt_reset(); // This means that we'll reset if the controller ever goes down.
-      setLEDs(thisRx);
       //P("Frames: %d\r\n", frameRxCount());
       lastRxCount = thisRx;
+      
+      if (fresh) {
+        fresh = 0;
+        P("On-line as node %02x\n", getNodeId());
+      }
     }
-    
-    PORTA = thisRx & 3;
   }
 }

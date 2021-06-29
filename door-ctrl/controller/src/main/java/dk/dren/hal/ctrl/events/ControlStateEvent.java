@@ -9,7 +9,7 @@ public class ControlStateEvent implements DeviceEvent {
     private final int eventNumber;
     private final byte state;
 
-    public ControlStateEvent(int deviceId, byte eventNumber, byte[] data) {
+    public ControlStateEvent(int deviceId, int eventNumber, byte[] data) {
         this.deviceId = deviceId;
         this.eventNumber = eventNumber;
         state = data[0];
