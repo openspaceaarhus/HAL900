@@ -19,14 +19,14 @@ import java.util.zip.CRC32;
  */
 @Getter
 public class PayloadDecryptor {
-    private final byte unpaddedSize;
+    private final int unpaddedSize;
     private final ByteBuffer plainText;
 
     @SneakyThrows
     public PayloadDecryptor(ByteBuffer payload, SecretKey aesKey) {
         final Cipher aes = Cipher.getInstance("AES/CBC/NoPadding");
         aes.init(Cipher.DECRYPT_MODE, aesKey, new IvParameterSpec(payload.toArray(0, 16)));
-        unpaddedSize = payload.get(16);
+        unpaddedSize = ((int)payload.get(16)) & 0xff;
         ByteBuffer plainTextWithCRCAndPadding = new ByteBuffer(aes.doFinal(payload.toArray(17, payload.size() - 17)));
 
         final long crc32FromText = Deframer.read32bitLittleEndian(plainTextWithCRCAndPadding, unpaddedSize);

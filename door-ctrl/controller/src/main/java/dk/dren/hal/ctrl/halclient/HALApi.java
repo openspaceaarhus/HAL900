@@ -1,5 +1,6 @@
 package dk.dren.hal.ctrl.halclient;
 
+import dk.dren.hal.ctrl.storage.State;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
@@ -15,9 +16,9 @@ public interface HALApi {
     @POST("/hal/login?gogogo=1")
     Call<ResponseBody> login(@Query("username")String user, @Query("passwd")String password);
 
-    @GET("/hal/admin/api/users")
-    Call<List<HalUser>> users();
-
     @POST("/hal/admin/api/events")
     Call<ResponseBody> events(@Body RequestBody body);
+
+    @GET("/hal/admin/api/state")
+    Call<State> state();
 }

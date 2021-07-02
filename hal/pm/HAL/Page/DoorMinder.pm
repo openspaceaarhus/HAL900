@@ -11,6 +11,8 @@ use HAL::Pages;
 use HAL::Session;
 use HAL::Util;
 
+use YAML;
+
 sub ensureAccess() {
     my $uRes = db->sql("select memberType, adminAccess ".
 		       "from member, membertype where member.membertype_id=membertype.id and member.id=?",
@@ -21,26 +23,34 @@ sub ensureAccess() {
     die "Non-Admin user accesed api" unless $adminAccess;
 }
 
-sub users {
+sub state {
+
     my ($r,$q,$p) = @_;
     ensureAccess();
 
-    my $content = "[\n";
-
+    my $state = {};
 
     my $rs = db->sql('select rfid,pin from member m join rfid r on (r.owner_id=m.id) where dooraccess and not lost')
 	or die "Fail!";
-    my $sep = "\n";
     while (my ($rfid, $pin) = $rs->fetchrow_array) {
-	$content .= $sep;
-	$content .= qq'{"rfid":"$rfid", "pin":"$pin"}';
-	$sep = ",\n";
+	$state->{rfidToPin}{$rfid} = $pin;
     }
     $rs->finish;
 
-    $content .= "]\n";
     
-    return outputRaw("text/json", $content, "hal-users.json");
+    my $dr = db->sql('select id,name,aesKey from access_device') or die "Fail!";
+    my $sep = "\n";
+    while (my ($id, $name, $aesKey) = $dr->fetchrow_array) {
+	$state->{devices}{$id} = {
+	    id=>$id,
+	    name=>$name,
+	    aesKey=>$aesKey,	    
+	};
+    }
+    $dr->finish;
+    
+
+    return outputRaw("text/yaml", Dump($state), "hal-state.yaml");
 }
 
 
@@ -119,33 +129,9 @@ sub events {
 }
 
 
-sub devices {
-    my ($r,$q,$p) = @_;
-    ensureAccess();
-
-    my $content = "[\n";
-
-
-    my $rs = db->sql('select id,name,aesKey from access_device') or die "Fail!";
-    my $sep = "\n";
-    while (my ($id, $name, $aesKey) = $rs->fetchrow_array) {
-	$content .= $sep;
-	$content .= qq'{"id":"$id", "name":"$name", "aesKey":"$aesKey"}';
-	$sep = ",\n";
-    }
-    $rs->finish;
-
-    $content .= "]\n";
-    
-    return outputRaw("text/json", $content, "access-devices.json");
-}
-
-
-
 BEGIN {
-    addHandler(qr'^/hal/admin/api/users$', \&users);
     addHandler(qr'^/hal/admin/api/events$', \&events);
-    addHandler(qr'^/hal/admin/api/devices$', \&devices);
+    addHandler(qr'^/hal/admin/api/state$', \&state);
 }
 
 12;

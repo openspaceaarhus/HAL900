@@ -9,7 +9,6 @@ import dk.dren.hal.ctrl.crypto.AES256Key;
 import dk.dren.hal.ctrl.events.ControllerStartEvent;
 import dk.dren.hal.ctrl.events.DeviceEvent;
 import dk.dren.hal.ctrl.halclient.HAL;
-import dk.dren.hal.ctrl.halclient.HalUser;
 import lombok.SneakyThrows;
 import lombok.extern.java.Log;
 import org.apache.commons.io.FileUtils;
@@ -226,19 +225,20 @@ public class StateManager implements DoorMinder {
 
     private void syncUsersFromHal() throws IOException {
         final HAL hal = getHAL();
-        final List<HalUser> users = hal.users();
+        final State stateFromHal = hal.state();
         synchronized (this) {
             Set<Long> seen = new TreeSet<>();
-            final Map<Long, String> rfidToPin = state.getRfidToPin();
-            for (HalUser halUser : users) {
-                seen.add(halUser.getRfid());
-                final String oldPin = rfidToPin.get(halUser.getRfid());
+            final Map<Long, String> rfidToPin = this.state.getRfidToPin();
+
+            for (Map.Entry<Long, String> rfidAndPin : stateFromHal.getRfidToPin().entrySet()) {
+                seen.add(rfidAndPin.getKey());
+                final String oldPin = rfidToPin.get(rfidAndPin.getKey());
                 if (oldPin == null) {
-                    log.info(String.format("New rfid: %x", halUser.getRfid()));
-                    rfidToPin.put(halUser.getRfid(), halUser.getPin());
-                } else if (!oldPin.equals(halUser.getPin())) {
-                    log.info(String.format("Changed pin for rfid: %x", halUser.getRfid()));
-                    rfidToPin.put(halUser.getRfid(), halUser.getPin());
+                    log.info(String.format("New rfid: %x", rfidAndPin.getKey()));
+                    rfidToPin.put(rfidAndPin.getKey(), rfidAndPin.getValue());
+                } else if (!oldPin.equals(rfidAndPin.getValue())) {
+                    log.info(String.format("Changed pin for rfid: %x", rfidAndPin.getKey()));
+                    rfidToPin.put(rfidAndPin.getKey(), rfidAndPin.getValue());
                 }
             }
 

@@ -1,5 +1,6 @@
 package dk.dren.hal.ctrl.halclient;
 
+import dk.dren.hal.ctrl.storage.State;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -20,9 +21,9 @@ class HALTest {
 
         final HAL hal = new HAL(URI.create("http://localhost"), "doorminder", passwd);
         hal.login();
-        final List<HalUser> users = hal.users();
+        State state = hal.state();
 
-        Assertions.assertNotNull(users);
+        Assertions.assertNotNull(state);
 
 
     }

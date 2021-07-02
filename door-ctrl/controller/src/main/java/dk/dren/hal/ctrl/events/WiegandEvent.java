@@ -1,7 +1,9 @@
 package dk.dren.hal.ctrl.events;
 
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 @Getter
 public class WiegandEvent implements DeviceEvent {
     public static final int TYPE=0x01;
@@ -54,12 +56,24 @@ public class WiegandEvent implements DeviceEvent {
 
     @Override
     public String getText() {
-        return String.format("Wiegand %d bits: 0x%x", bits, data);
+        if (isKeyPress()) {
+            if (data == KEY_STAR) {
+                return "*";
+            } else if (data == KEY_BELL) {
+                return "Bell";
+            } else if (data == KEY_HASH) {
+                return "Hash";
+            } else {
+                return Long.toString(data);
+            }
+        } else {
+            return String.format("RFID %d bits: 0x%x", bits, data);
+        }
     }
 
     @Override
     public boolean isLoggedRemotely() {
-        return true;
+        return isRFID() || data > 9;
     }
 
     @Override

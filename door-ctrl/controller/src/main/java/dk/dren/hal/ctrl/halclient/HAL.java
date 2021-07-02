@@ -1,5 +1,8 @@
 package dk.dren.hal.ctrl.halclient;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import dk.dren.hal.ctrl.storage.State;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -37,7 +40,7 @@ public class HAL {
     private Retrofit createRetrofit() {
         return new Retrofit.Builder()
                 .baseUrl(uri.toURL())
-                .addConverterFactory(JacksonConverterFactory.create())
+                .addConverterFactory(JacksonConverterFactory.create(new ObjectMapper(new YAMLFactory())))
                 .client(
                         new OkHttpClient().newBuilder()
                                 .cookieJar(new SessionCookieJar()).build())
@@ -56,12 +59,6 @@ public class HAL {
         }
     }
 
-    public List<HalUser> users() throws IOException {
-        final Call<List<HalUser>> request = getApi().users();
-        final Response<List<HalUser>> response = request.execute();
-        return response.body();
-    }
-
     public boolean sendEvents(byte[] contentToSend) throws IOException {
         final RequestBody requestBody = RequestBody.create(MediaType.parse("text/plain"), contentToSend);
         final Response<ResponseBody> response = getApi().events(requestBody).execute();
@@ -75,5 +72,9 @@ public class HAL {
 
         log.warning("HAL did not accept the log entries: "+responseBody);
         return false;
+    }
+
+    public State state() throws IOException {
+        return getApi().state().execute().body();
     }
 }

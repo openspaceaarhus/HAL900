@@ -125,7 +125,7 @@ public class Deframer {
         try {
             frameConsumer.accept(frame);
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Error while handling frame "+frame+": "+e);
+            log.log(Level.SEVERE, "Error while handling frame "+frame+": ",e);
         }
 
         // Remove all the bytes we just parsed

@@ -1,7 +1,9 @@
 package dk.dren.hal.ctrl.events;
 
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 @Getter
 public class ControlStateEvent implements DeviceEvent {
     public static final byte TYPE = 0x03;

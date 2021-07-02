@@ -2,7 +2,9 @@ package dk.dren.hal.ctrl.events;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
+@ToString
 @RequiredArgsConstructor
 @Getter
 public class Unlocked implements DeviceEvent {
