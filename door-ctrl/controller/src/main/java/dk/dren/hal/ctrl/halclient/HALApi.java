@@ -1,5 +1,6 @@
 package dk.dren.hal.ctrl.halclient;
 
+import dk.dren.hal.ctrl.storage.DeviceState;
 import dk.dren.hal.ctrl.storage.State;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
@@ -21,4 +22,7 @@ public interface HALApi {
 
     @GET("/hal/admin/api/state")
     Call<State> state();
+
+    @POST("/hal/admin/api/createDevices")
+    Call<ResponseBody> createDevices(@Body List<DeviceState> devices);
 }

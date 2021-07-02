@@ -2,6 +2,7 @@ package dk.dren.hal.ctrl.halclient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import dk.dren.hal.ctrl.storage.DeviceState;
 import dk.dren.hal.ctrl.storage.State;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -76,5 +77,16 @@ public class HAL {
 
     public State state() throws IOException {
         return getApi().state().execute().body();
+    }
+
+    public boolean createDevices(List<DeviceState> devices) throws IOException {
+        final Response<ResponseBody> response = getApi().createDevices(devices).execute();
+        final String responseBody = response.body().string();
+        if (responseBody.equals("Ok")) {
+            return true;
+        }
+
+        log.warning("HAL did not accept the new devices: "+responseBody);
+        return false;
     }
 }

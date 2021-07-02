@@ -226,6 +226,8 @@ public class StateManager implements DoorMinder {
     private void syncUsersFromHal() throws IOException {
         final HAL hal = getHAL();
         final State stateFromHal = hal.state();
+
+        List<DeviceState> newDevices = new ArrayList<>();
         synchronized (this) {
             Set<Long> seen = new TreeSet<>();
             final Map<Long, String> rfidToPin = this.state.getRfidToPin();
@@ -250,6 +252,36 @@ public class StateManager implements DoorMinder {
                     nuker.remove();
                 }
             }
+
+            // Sync name of devices to the devices we know.
+            for (DeviceState halDevice : stateFromHal.getDevices().values()) {
+                final DeviceState myDevice = state.getDevices().get(halDevice.getId());
+                if (myDevice == null) {
+                    if (halDevice.getAesKey().isEmpty()) {
+                        // Keeping my device.
+                    } else {
+                        state.getDevices().put(halDevice.getId(), halDevice);
+                    }
+                } else {
+                    if (!myDevice.getName().equals(halDevice.getName())) {
+                        log.info("New name for "+myDevice.getId()+" "+ myDevice.getName() + " -> "+halDevice.getName());
+                        myDevice.setName(halDevice.getName());
+                    }
+                    if (halDevice.getAesKey().isEmpty()) {
+                        newDevices.add(myDevice); // Update the aes key
+                    }
+                }
+            }
+
+            for (DeviceState myDevice : state.getDevices().values()) {
+                if (!state.getDevices().containsKey(myDevice.getId())) {
+                    newDevices.add(myDevice);
+                }
+            }
+        }
+
+        if (!newDevices.isEmpty()) {
+            getHAL().createDevices(newDevices);
         }
     }
 

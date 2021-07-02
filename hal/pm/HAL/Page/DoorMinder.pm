@@ -128,10 +128,35 @@ sub events {
     return outputRaw("text/plain", "Ok", "ok.txt");    
 }
 
+sub createDevices {
+    my ($r,$q,$p) = @_;
+    ensureAccess();
+
+    my $oldDevices = getDevices();
+    
+    my $data = $p->{POSTDATA} or die "Missing post data";
+    my $devices = Load($data);
+    for my $d (@$devices) {
+	if (my $od = $oldDevices->{$d->{id}}) {
+	    db->sql("update access_device set aesKey=? where id=?",
+		    $d->{aesKey}, $d->{id}
+		) or die;	    
+	} else {
+	    db->sql("insert into access_device (id,name,aesKey) values (?,?,?)",
+		    $d->{id}, $d->{name}, $d->{aesKey}
+		) or die;	    
+	}
+	
+    }
+    
+    return outputRaw("text/plain", "Ok", "ok.txt");    
+}
+
 
 BEGIN {
     addHandler(qr'^/hal/admin/api/events$', \&events);
     addHandler(qr'^/hal/admin/api/state$', \&state);
+    addHandler(qr'^/hal/admin/api/createDevices$', \&createDevices);
 }
 
 12;
