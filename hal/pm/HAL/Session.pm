@@ -2,7 +2,7 @@
 package HAL::Session;
 require Exporter;
 @ISA=qw(Exporter);
-@EXPORT = qw(loadSession storeSession newSession getSession getSessionID ensureAdmin ensureLogin ensureDoor canAccess loginSession logoutSession isLoggedIn isAdmin clearSession);
+@EXPORT = qw(loadSession storeSession newSession getSession getSessionID ensureAdmin ensureLogin ensureDoor canAccess loginSession logoutSession isLoggedIn isAdmin clearSession ensureAPI);
 
 use strict;
 use warnings;
@@ -87,6 +87,11 @@ sub ensureDoor($) {
     $secure{qr/$rx/} = 'door';    
 }
 
+sub ensureAPI($) {
+    my ($rx) = @_;
+    $secure{qr/$rx/} = 'api';    
+}
+
 sub canAccess($) {
     my ($uri) = @_;
 
@@ -108,14 +113,21 @@ sub isLoggedIn() {
 
 sub isAdmin() {
     return 0 unless $sessionID;
-    return 2 if index($session{access}||'', 'admin') >= 0;   
+    return 2 if index($session{access}||'', 'admin') >= 0;
+    return 0;
+}
+
+sub isAPIUser() {
+    return 0 unless $sessionID;
+    return 3 if index($session{access}||'', 'api') >= 0;
+    return 0;
 }
 
 sub loginSession($) {
     my ($member_id) = @_;
 
-    my $ares = db->sql("select id, doorAccess, adminAccess, realname, username from member where id=?", $member_id);
-    my ($id, $door, $admin, $name,$username) = $ares->fetchrow_array;
+    my $ares = db->sql("select id, doorAccess, adminAccess, realname, username, membertype_id from member where id=?", $member_id);
+    my ($id, $door, $admin, $name,$username, $type) = $ares->fetchrow_array;
     $ares->finish;
 
     die "Invalid member_id passed to loginSession: $member_id" unless $id and $id == $member_id;
@@ -124,6 +136,7 @@ sub loginSession($) {
     $session{access} = 'login';
     $session{access} .= ',door' if $door;
     $session{access} .= ',admin' if $admin;
+    $session{access} .= ',api' if $type==5 or ($id==1 and $admin); 
     $session{name} = $name;
     $session{username} = $username;
 }

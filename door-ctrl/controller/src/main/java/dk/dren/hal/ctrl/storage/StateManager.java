@@ -23,7 +23,6 @@ import java.util.*;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * Starts a thread that periodically synchronizes the state with the local file system and HAL.
@@ -118,10 +117,12 @@ public class StateManager implements DoorMinder {
         dirtyState.release(); // Signal to the sync thread that it's time to go to work.
     }
 
-    public synchronized List<BusDevice> getKnownBusDevices() {
-        return state.getDevices().values().stream()
-                .map(this::createBusDevice)
-                .collect(Collectors.toList());
+    public synchronized void addDevices(Map<Integer, BusDevice> deviceById) {
+        for (Map.Entry<Integer, DeviceState> idAndState : state.getDevices().entrySet()) {
+            if (!deviceById.containsKey(idAndState.getKey())) {
+                deviceById.put(idAndState.getKey(), createBusDevice(idAndState.getValue()));
+            }
+        }
     }
 
     private BusDevice createBusDevice(DeviceState s) {
@@ -255,6 +256,9 @@ public class StateManager implements DoorMinder {
 
             // Sync name of devices to the devices we know.
             for (DeviceState halDevice : stateFromHal.getDevices().values()) {
+                if (halDevice.getId() == 0) {
+                    continue;
+                }
                 final DeviceState myDevice = state.getDevices().get(halDevice.getId());
                 if (myDevice == null) {
                     if (halDevice.getAesKey().isEmpty()) {
@@ -342,4 +346,5 @@ public class StateManager implements DoorMinder {
 
         return pin.equals(okPin);
     }
+
 }

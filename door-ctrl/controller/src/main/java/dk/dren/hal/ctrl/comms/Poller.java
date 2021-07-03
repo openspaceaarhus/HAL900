@@ -8,7 +8,6 @@ import lombok.extern.java.Log;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -28,9 +27,7 @@ public class Poller {
     public Poller(File serialDevice, StateManager stateManager) {
         rs485 = new RS485(serialDevice, this::handleFrame);
         this.stateManager = stateManager;
-        for (BusDevice knownBusDevice : stateManager.getKnownBusDevices()) {
-            deviceById.put(knownBusDevice.getId(), knownBusDevice);
-        };
+        stateManager.addDevices(deviceById);
     }
 
     private void handleFrame(Frame frame) {
@@ -63,6 +60,7 @@ public class Poller {
     private void poll() {
         long lastReply = System.currentTimeMillis();
         while (true) {
+            stateManager.addDevices(deviceById);
             final long now = System.currentTimeMillis();
             for (BusDevice bd : deviceById.values()) {
                 if (rs485.sendAndWaitForReply(bd.getQueryFrame())) {

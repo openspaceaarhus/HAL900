@@ -17,12 +17,12 @@ public interface HALApi {
     @POST("/hal/login?gogogo=1")
     Call<ResponseBody> login(@Query("username")String user, @Query("passwd")String password);
 
-    @POST("/hal/admin/api/events")
+    @POST("/hal/api/events")
     Call<ResponseBody> events(@Body RequestBody body);
 
-    @GET("/hal/admin/api/state")
+    @GET("/hal/api/state")
     Call<State> state();
 
-    @POST("/hal/admin/api/createDevices")
+    @POST("/hal/api/createDevices")
     Call<ResponseBody> createDevices(@Body List<DeviceState> devices);
 }

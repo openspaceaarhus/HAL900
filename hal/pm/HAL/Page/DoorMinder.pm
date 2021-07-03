@@ -13,20 +13,8 @@ use HAL::Util;
 
 use YAML;
 
-sub ensureAccess() {
-    my $uRes = db->sql("select memberType, adminAccess ".
-		       "from member, membertype where member.membertype_id=membertype.id and member.id=?",
-		       getSession->{member_id});
-    my ($memberType, $adminAccess) = $uRes->fetchrow_array;
-    $uRes->finish;
-
-    die "Non-Admin user accesed api" unless $adminAccess;
-}
-
 sub state {
-
     my ($r,$q,$p) = @_;
-    ensureAccess();
 
     my $state = {};
 
@@ -38,7 +26,7 @@ sub state {
     $rs->finish;
 
     
-    my $dr = db->sql('select id,name,aesKey from access_device') or die "Fail!";
+    my $dr = db->sql('select id,name,aesKey from access_device where id <> 0') or die "Fail!";
     my $sep = "\n";
     while (my ($id, $name, $aesKey) = $dr->fetchrow_array) {
 	$state->{devices}{$id} = {
@@ -89,7 +77,6 @@ sub getTypes {
 
 sub events {
     my ($r,$q,$p) = @_;
-    ensureAccess();
 
     my $devices = getDevices();
     my $types = getTypes();
@@ -130,7 +117,6 @@ sub events {
 
 sub createDevices {
     my ($r,$q,$p) = @_;
-    ensureAccess();
 
     my $oldDevices = getDevices();
     
@@ -154,9 +140,10 @@ sub createDevices {
 
 
 BEGIN {
-    addHandler(qr'^/hal/admin/api/events$', \&events);
-    addHandler(qr'^/hal/admin/api/state$', \&state);
-    addHandler(qr'^/hal/admin/api/createDevices$', \&createDevices);
+    ensureAPI(qr'^/hal/api/');
+    addHandler(qr'^/hal/api/events$', \&events);
+    addHandler(qr'^/hal/api/state$', \&state);
+    addHandler(qr'^/hal/api/createDevices$', \&createDevices);
 }
 
 12;
