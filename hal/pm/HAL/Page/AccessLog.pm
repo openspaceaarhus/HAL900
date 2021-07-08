@@ -19,6 +19,21 @@ use HAL::Util;
 use HAL::Email;
 use HAL::TypeAhead;
 
+my %ownerToLink;
+sub rfidOwnerLink {
+    my ($rfid) = @_;
+
+    return $ownerToLink{$rfid} if exists $ownerToLink{$rfid};
+    
+    my $mr = db->sql('select m.id, realname, username, r.name, r.id from member m join rfid r on (r.owner_id=m.id) where r.rfid=?', $rfid);
+    my ($mid, $realname,$username,$rfidName,$rid) = $mr->fetchrow_array;
+    $mr->finish;
+
+    return $ownerToLink{$rfid} = undef unless defined $mid;    
+    return $ownerToLink{$rfid} = qq'RFID <a href="/hal/admin/rfid/$rid">$rfidName</a> belonging to <a href="/hal/admin/members/$mid">$realname aka. $username</a>';  
+}
+
+
 sub accessPage {
     my ($r,$q,$p) = @_;
     
@@ -36,6 +51,18 @@ sub accessPage {
     my $count = 0;
     while (my ($created, $device, $type, $type_id, $eventNumber, $data, $text) = $rs->fetchrow_array) {
 
+	if ($type_id == 254) {
+	    my $ul = rfidOwnerLink($data);
+	    $text = qq'Unlocked for $ul';
+	    
+	} elsif ($type_id == 1 && $text =~ /^RFID/) {	    
+	    my $ul = rfidOwnerLink($data);
+	    if (defined $ul) {
+		$text = qq'Scanned $ul';
+	    }
+	}
+	
+	
 	my @row = (
 	    $created,
 	    $device,
