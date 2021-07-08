@@ -888,16 +888,57 @@ $rfids
     return outputAdminPage('member', "Medlemmer", $html);
 }
 
+
+sub getUnknownRfids {
+
+    my @res;
+    my %seen;
+    my $res = db->sql("
+    select created_remote, d.name, wiegand_data
+	from access_event e
+	join access_device d on (d.id=e.device_id)
+	where access_event_type=1 and event_text like 'RFID%'
+	and not wiegand_data in (select rfid from rfid)
+        and age(created_remote) < '30 days'
+	order by e.id desc limit 50");
+    while (my ($created, $dev, $rfid) = $res->fetchrow_array) {
+	next if $seen{$rfid}++;
+	push @res, {
+	    rfid=>$rfid,
+	    seen=>$created,
+	    at=>$dev,
+	};
+    }
+    $res->finish;
+
+    return @res;    
+}
+
+
 sub addRFIDPage {
     my ($r,$q,$p,$member_id) = @_;
 
     my $html = '';
+
+    my @unknownRfids = getUnknownRfids();
+    
     
     $html .= qq'<form method="post" action="/hal/admin/members/$member_id/addrfid">';
 
     $html .= encode_hidden({
 	 fromrfid=>$p->{fromrfid} ? 1 : 0,
     });
+
+    if (@unknownRfids) {
+	$html .= qq'<h4>Ukendte RFIDs</h4>
+	    <p class="lead">Vælg en ukendt RFID der for nyligt er blevet set ved en scanner.</p>';
+	$html .= qq'<select name="urfid" id="urfid">\n';
+	for my $ur (@unknownRfids) {
+	    $html .= qq'  <option value="$ur->{rfid}">$ur->{rfid} set af $ur->{at} @ $ur->{seen}</option>\n';
+	}
+	$html .= qq'</select></td></tr>\n';
+	$p->{rfid} = $p->{urfid} if $p->{urfid};
+    }
     
     my $errors = 0;
     $html .= textInput("RFID",
@@ -973,6 +1014,34 @@ sub rfidDetailsPage {
     }
         
 
+    my $rs = db->sql('select created_remote,d.name as device,t.name as type, t.id,event_text
+ from access_event e
+ join access_device d on (d.id=e.device_id)
+ join access_event_type t on (t.id=e.access_event_type)
+ where wiegand_data=?
+ order by e.id desc limit 100', $rfid)
+	or die "Fail!";
+
+    $html .= "<h3>Seneste events for denne RFID</h3>\n";
+    $html .= "<table><tr><th>Tid (UTC)</th><th>Enhed</th><th>Type</th><th>Text</th></tr>\n";
+    my $count = 0;
+    while (my ($created, $device, $type, $type_id, $text) = $rs->fetchrow_array) {
+
+	my @row = (
+	    $created,
+	    $device,
+	    $type,
+	    $text);
+		     
+	my $class = ($count++ & 1) ? 'class="odd"' : 'class="even"';
+	$html .= qq'<tr class="$class">'.join('', map { "<td>$_</td>" } @row)."</tr>\n";
+
+    }
+    $html .= "</table>";
+	
+    $rs->finish;
+
+    
     return outputAdminPage('rfiddetails', "RFID detaljer", $html);
 }
 

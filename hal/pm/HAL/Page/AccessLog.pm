@@ -36,6 +36,7 @@ sub rfidOwnerLink {
 
 sub accessPage {
     my ($r,$q,$p) = @_;
+    %ownerToLink = ();
     
     my $limit = $p->{limit} || 200;
     die "Bad limit: $limit" unless $limit =~ /^\d+$/;
