@@ -1,4 +1,4 @@
-update=Wed 26 May 2021 17:40:14 CEST
+update=Thu 08 Jul 2021 12:29:53 CEST
 last_client=kicad
 [general]
 version=1
@@ -54,3 +54,13 @@ LibName24=SOT363
 [eeschema]
 version=1
 LibDir=
+[schematic_editor]
+version=1
+PageLayoutDescrFile=
+PlotDirectoryName=
+SubpartIdSeparator=0
+SubpartFirstId=65
+NetFmtName=Pcbnew
+SpiceAjustPassiveValues=0
+LabSize=50
+ERC_TestSimilarLabels=1

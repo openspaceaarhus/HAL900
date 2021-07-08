@@ -60,7 +60,7 @@ public class BusDevice {
             lockTime = 0;
         }
         if (desiredOutputState != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
-            log.info(String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
+            log.fine(()->String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
             return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
         } else {
             return PollFrame.create(getId(), getLastEventSeen());

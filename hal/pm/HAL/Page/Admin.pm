@@ -19,59 +19,6 @@ use HAL::Util;
 use HAL::Email;
 use HAL::TypeAhead;
 
-sub outputAdminPage($$$;$) {
-    my ($cur, $title, $body, $feed) = @_;
-    
-    my @items = (
-	{
-	    link=>"/hal/admin/",
-	    name=>'index',
-	    title=>'Admin',
-	},
-	{
-	    link=>"/hal/admin/members",
-	    name=>'members',
-	    title=>'Medlemmer',
-	},
-	{
-	    link=>"/hal/admin/rfid",
-	    name=>'rfid',
-	    title=>'RFID',
-	},
-	{
-	    link=>"/hal/admin/accounts",
-	    name=>'accounts',
-	    title=>'Konti',
-	},
-	);
-    
-    my $js;
-    my $onload;
-    
-    for my $i (@items) {
-	if ($i->{name} eq $cur) {
-	    $i->{current}=1;
-	}
-    }
-
-    if ($cur eq 'consolidate' or $cur eq 'rain') {
-	$js = "$cur.js";
-	$onload = "init_$cur();";
-    }
-    
-    return {
-	opt=>{
-	    title=>$title,
-	    feed=>$feed,
-	    noFeedPage=>$cur eq 'news',
-	    js=>$js,
-	    onload=>$onload,
-	},
-	body=>$body,
-	items=>\@items,         
-    }
-} 
-
 sub indexPage {
     my ($r,$q,$p) = @_;
 

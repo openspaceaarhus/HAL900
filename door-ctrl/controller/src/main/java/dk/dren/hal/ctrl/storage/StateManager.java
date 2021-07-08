@@ -67,7 +67,13 @@ public class StateManager implements DoorMinder {
 
         File stateFile = config.getStateFile();
         if (isContentsOfFileDifferent(stateFile, yamlBytes.toByteArray())) {
-            File tmp = File.createTempFile("state-", ".yaml", stateFile.getParentFile());
+            final File stateDir = stateFile.getParentFile();
+            if (!stateDir.isDirectory()) {
+                if (!stateDir.mkdirs()) {
+                    log.warning("Unable to create missing directory: "+stateDir);
+                }
+            }
+            File tmp = File.createTempFile("state-", ".yaml", stateDir);
             log.fine(() -> "Storing new " + stateFile);
             FileUtils.writeByteArrayToFile(tmp, yamlBytes.toByteArray());
 
@@ -188,6 +194,12 @@ public class StateManager implements DoorMinder {
             if (events.isEmpty()) {
                 return;
             }
+            final File eventsDir = config.getEventsFile().getParentFile();
+            if (!eventsDir.isDirectory()) {
+                if (!eventsDir.mkdirs()) {
+                    log.warning("Unable to create missing directory: "+eventsDir);
+                }
+            }
             try (final FileWriter appender = new FileWriter(config.getEventsFile(), true)) {
                 for (Map.Entry<Long, String> timestampAndEvent : events.entrySet()) {
                     appender.append(timestampAndEvent.getKey().toString())
@@ -278,7 +290,7 @@ public class StateManager implements DoorMinder {
             }
 
             for (DeviceState myDevice : state.getDevices().values()) {
-                if (!state.getDevices().containsKey(myDevice.getId())) {
+                if (!stateFromHal.getDevices().containsKey(myDevice.getId())) {
                     newDevices.add(myDevice);
                 }
             }

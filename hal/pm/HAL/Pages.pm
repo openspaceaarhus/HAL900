@@ -2,7 +2,7 @@
 package HAL::Pages;
 require Exporter;
 @ISA=qw(Exporter);
-@EXPORT = qw(l db dbCommit dbRollback addHandler callHandler outputGoto outputRaw outputNotFound outputHtml textInput areaInput passwdInput2 passwdInput radioInput memberInput setCurrentIP setCurrentUser);
+@EXPORT = qw(l db dbCommit dbRollback addHandler callHandler outputGoto outputRaw outputNotFound outputHtml textInput areaInput passwdInput2 passwdInput radioInput memberInput setCurrentIP setCurrentUser outputAdminPage);
 use strict;
 use warnings;
 use Data::Dumper;
@@ -247,6 +247,65 @@ sub memberInput {
 <p class="lead">$lead</p>
 '.typeAhead($name, $v, 'member').$error;
 }
+
+
+sub outputAdminPage($$$;$) {
+    my ($cur, $title, $body, $feed) = @_;
+    
+    my @items = (
+	{
+	    link=>"/hal/admin/",
+	    name=>'index',
+	    title=>'Admin',
+	},
+	{
+	    link=>"/hal/admin/members",
+	    name=>'members',
+	    title=>'Medlemmer',
+	},
+	{
+	    link=>"/hal/admin/rfid",
+	    name=>'rfid',
+	    title=>'RFID',
+	},
+	{
+	    link=>"/hal/admin/accounts",
+	    name=>'accounts',
+	    title=>'Konti',
+	},
+	{
+	    link=>"/hal/admin/accesslog",
+	    name=>'accesslog',
+	    title=>'Adgangslog',
+	},
+	);
+    
+    my $js;
+    my $onload;
+    
+    for my $i (@items) {
+	if ($i->{name} eq $cur) {
+	    $i->{current}=1;
+	}
+    }
+
+    if ($cur eq 'consolidate' or $cur eq 'rain') {
+	$js = "$cur.js";
+	$onload = "init_$cur();";
+    }
+    
+    return {
+	opt=>{
+	    title=>$title,
+	    feed=>$feed,
+	    noFeedPage=>$cur eq 'news',
+	    js=>$js,
+	    onload=>$onload,
+	},
+	body=>$body,
+	items=>\@items,         
+    }
+} 
 
 
 42;

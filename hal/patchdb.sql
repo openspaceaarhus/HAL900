@@ -89,3 +89,11 @@ create table access_event (
 );
 
 commit;
+begin;
+update access_device set name='Raspberry Pi' where id=0 and name='Unknown'; 
+update access_device set name='v4 1-relæ' where id=1 and name='Unknown'; 
+update access_device set name='v4 2-relæ' where id=2 and name='Unknown'; 
+
+update access_event_type set name='Pi start' where name = 'Unknown 253';
+update access_event_type set name='Locked' where name = 'Unknown 252';
+commit;

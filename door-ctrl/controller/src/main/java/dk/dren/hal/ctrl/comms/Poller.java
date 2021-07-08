@@ -102,7 +102,7 @@ public class Poller {
             if (!deviceById.isEmpty()) {
 
                 final long age = TimeUnit.MILLISECONDS.toSeconds(now - lastReply);
-                if (age > 20) {
+                if (age > 600) {
                     log.severe("Exiting poller, hoping to be restarted");
                     return;
                 } else if (age > 10) {
