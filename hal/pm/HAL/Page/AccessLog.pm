@@ -23,6 +23,8 @@ my %ownerToLink;
 sub rfidOwnerLink {
     my ($rfid) = @_;
 
+    return undef unless defined $rfid;
+    
     return $ownerToLink{$rfid} if exists $ownerToLink{$rfid};
     
     my $mr = db->sql('select m.id, realname, username, r.name, r.id from member m join rfid r on (r.owner_id=m.id) where r.rfid=?', $rfid);
@@ -45,14 +47,19 @@ sub accessPage {
  from access_event e
  join access_device d on (d.id=e.device_id)
  join access_event_type t on (t.id=e.access_event_type)
- order by e.id desc limit ?', $limit)
-	or die "Fail!";
+ order by e.id desc limit ?', $limit);
 
     my $html = "<table><tr><th>Tid (UTC)</th><th>Enhed</th><th>Type</th><th>#</th><th>Data</th><th>Text</th></tr>\n";
     my $count = 0;
     while (my ($created, $device, $type, $type_id, $eventNumber, $data, $text) = $rs->fetchrow_array) {
 
-	if ($type_id == 254) {
+	if ($type_id == 255) {
+	    my $ul = rfidOwnerLink($data);
+	    if ($ul) {
+		$text = qq'PIN timeout for $ul';
+	    }
+	    
+	} elsif ($type_id == 254) {
 	    my $ul = rfidOwnerLink($data);
 	    $text = qq'Unlocked for $ul';
 	    

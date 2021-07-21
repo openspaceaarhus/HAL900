@@ -96,4 +96,43 @@ update access_device set name='v4 2-relæ' where id=2 and name='Unknown';
 
 update access_event_type set name='Pi start' where name = 'Unknown 253';
 update access_event_type set name='Locked' where name = 'Unknown 252';
+update access_event_type set name='PIN timeout' where id=255 and name = 'User timeout';
+commit;
+
+begin;
+create table gpio_bit (
+   device_id int references access_device(id) not null,  
+   index int not null,
+
+   name varchar not null,
+   set_event varchar,
+   clear_event varchar,
+
+   primary key (device_id, index);
+);
+
+/* Outputs */
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 0, "Lås", "Låst op", "Låst");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 1, "Sirene", "Sirene tændt", "Sirene slukket");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 2, "Wiegand ok", null, null);
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 3, "bit 3", "bit 3 set", "bit 3 cleared");
+
+/* inputs */
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 4, "Greb", "Greb nede", "Greb oppe");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 5, "Rigel", "Rigel inde", "Rigel ude");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 6, "Dør", "Dør åben", "Dør lukket");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 7, "bit 7", "bit 7 set", "bit 7 cleared");
+
+/* Outputs */
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 0, "Lås", "Låst op", "Låst");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 1, "K2", "K2=1", "K2=0");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 2, "Wiegand ok", null, null);
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 3, "bit 3", "bit 3 set", "bit 3 cleared");
+
+/* inputs */
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 4, "Greb", "Greb nede", "Greb oppe");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 5, "Rigel", "Rigel inde", "Rigel ude");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 6, "Dør", "Dør åben", "Dør lukket");
+insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 7, "Bystrøm", "Bystrøm ok", "Bystrøm mangler");
+
 commit;

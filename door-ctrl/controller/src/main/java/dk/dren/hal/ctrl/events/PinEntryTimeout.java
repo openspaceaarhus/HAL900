@@ -7,8 +7,9 @@ import lombok.ToString;
 @ToString
 @Getter
 @RequiredArgsConstructor
-public class UserTimeout implements DeviceEvent {
+public class PinEntryTimeout implements DeviceEvent {
     private final int deviceId;
+    private final long rfid;
 
     @Override
     public int getType() {
@@ -22,12 +23,12 @@ public class UserTimeout implements DeviceEvent {
 
     @Override
     public Long getData() {
-        return null;
+        return rfid;
     }
 
     @Override
     public String getText() {
-        return "User timeout";
+        return "Pin Entry timeout";
     }
 
     @Override

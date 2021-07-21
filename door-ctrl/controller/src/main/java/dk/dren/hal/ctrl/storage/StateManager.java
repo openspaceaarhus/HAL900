@@ -32,7 +32,7 @@ import java.util.logging.Level;
  */
 @Log
 public class StateManager implements DoorMinder {
-    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/m H:M:S");
+    public static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("y d/M h:m:s");
     private static final ObjectMapper YAML = new ObjectMapper(new YAMLFactory());
     public static final long MINIMUM_HAL_SYNC_INTERVAL = TimeUnit.SECONDS.toMillis(30);
     private static final long MINIMUM_EVENT_PUSH_INTERVAL = TimeUnit.SECONDS.toMillis(5);
@@ -132,8 +132,7 @@ public class StateManager implements DoorMinder {
     }
 
     private BusDevice createBusDevice(DeviceState s) {
-        final BusDevice busDevice = new BusDevice(s.getId(), AES256Key.load(s.getAesKey()), this);
-        return busDevice;
+        return new BusDevice(s.getId(), AES256Key.load(s.getAesKey()), this);
     }
 
     private String millisToString(long millis) {

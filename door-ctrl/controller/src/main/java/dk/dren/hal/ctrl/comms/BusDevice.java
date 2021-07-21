@@ -73,19 +73,24 @@ public class BusDevice {
      * @param frame The new frame
      */
     public void handleAnswerFrame(Frame frame) {
+        checkPinEntryTimeout();
+
         if (frame.getType() == PollResponse.TYPE) {
             PollResponse pr = PollResponse.from(frame, id, secretKey);
-            lastPollResponseSeen = System.currentTimeMillis();
-            if (rfid !=0 && lastPollResponseSeen-lastWiegandActivity > PIN_ENTRY_TIMEOUT) {
-                sendEvent(new UserTimeout(id));
-                resetInputState();
-            }
 
             for (DeviceEvent event : pr.getEvents()) {
                 lastEventSeen = event.getEventNumber();
                 sendEvent(event);
                 handleEvent(event);
             }
+        }
+    }
+
+    private void checkPinEntryTimeout() {
+        lastPollResponseSeen = System.currentTimeMillis();
+        if (rfid !=0 && lastPollResponseSeen-lastWiegandActivity > PIN_ENTRY_TIMEOUT) {
+            sendEvent(new PinEntryTimeout(id, rfid));
+            resetInputState();
         }
     }
 

@@ -933,6 +933,7 @@ sub addRFIDPage {
 	$html .= qq'<h4>Ukendte RFIDs</h4>
 	    <p class="lead">Vælg en ukendt RFID der for nyligt er blevet set ved en scanner.</p>';
 	$html .= qq'<select name="urfid" id="urfid">\n';
+	    $html .= qq'  <option value="">Vælg en frisk RFID</option>\n';
 	for my $ur (@unknownRfids) {
 	    $html .= qq'  <option value="$ur->{rfid}">$ur->{rfid} set af $ur->{at} @ $ur->{seen}</option>\n';
 	}
