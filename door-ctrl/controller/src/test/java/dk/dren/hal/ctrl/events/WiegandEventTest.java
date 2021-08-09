@@ -46,7 +46,11 @@ class WiegandEventTest {
         System.out.println(tag+"\t"+ bin + String.format(" %d 0x%x", unpacked, unpacked));
     }
 
-
-
-
+    @Test
+    public void printOldMM() {
+        print("MM", 2426002L);
+        print("M1",8594786596L);
+        print("M2",8594786597L);
+        print("PP",1L<<33);
+    }
 }

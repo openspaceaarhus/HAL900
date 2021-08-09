@@ -27,11 +27,13 @@ sub rfidOwnerLink {
     
     return $ownerToLink{$rfid} if exists $ownerToLink{$rfid};
     
-    my $mr = db->sql('select m.id, realname, username, r.name, r.id from member m join rfid r on (r.owner_id=m.id) where r.rfid=?', $rfid);
-    my ($mid, $realname,$username,$rfidName,$rid) = $mr->fetchrow_array;
+    my $mr = db->sql('select m.id, realname, username, r.name, r.id, r.rfid from member m join rfid r on (r.owner_id=m.id) where r.rfid=?', $rfid);
+    my ($mid, $realname,$username,$rfidName,$rid, $fdid) = $mr->fetchrow_array;
     $mr->finish;
 
-    return $ownerToLink{$rfid} = undef unless defined $mid;    
+    return $ownerToLink{$rfid} = undef unless defined $mid;
+
+    $rfidName ||= $rfid;
     return $ownerToLink{$rfid} = qq'RFID <a href="/hal/admin/rfid/$rid">$rfidName</a> belonging to <a href="/hal/admin/members/$mid">$realname aka. $username</a>';  
 }
 

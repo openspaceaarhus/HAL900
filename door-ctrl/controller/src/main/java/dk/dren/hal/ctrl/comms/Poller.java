@@ -19,13 +19,15 @@ public class Poller {
     public static final long ENROLLMENT_TIMEOUT = TimeUnit.SECONDS.toMillis(30);
     private final RS485 rs485;
     private final StateManager stateManager;
+    private final boolean enrollEnabled;
     private Thread pollThread;
     private Map<Integer, BusDevice> deviceById = new TreeMap<>();
     private EnrollRequest enrollmentRequest;
     private List<EnrollResponse> pendingEnrollments = new ArrayList<>();
 
-    public Poller(File serialDevice, StateManager stateManager) {
-        rs485 = new RS485(serialDevice, this::handleFrame);
+    public Poller(File serialDevice, StateManager stateManager, int answerTimeoutMs, boolean enrollEnabled) {
+        this.enrollEnabled = enrollEnabled;
+        rs485 = new RS485(serialDevice, this::handleFrame, answerTimeoutMs);
         this.stateManager = stateManager;
         stateManager.addDevices(deviceById);
     }
@@ -68,35 +70,37 @@ public class Poller {
                 }
             }
 
-            final Iterator<EnrollResponse> pendingIterator = pendingEnrollments.iterator();
-            while (pendingIterator.hasNext()) {
-                EnrollResponse pe = pendingIterator.next();
-                final BusDevice bd = pe.getBusDevice();
-                if (bd.getCreated() < bd.getLastPollResponseSeen()) {
-                    pendingIterator.remove();
-                    log.info("Successful enrollment of device #"+bd.getId());
-                } else if (now -bd.getCreated() > ENROLLMENT_TIMEOUT) {
-                    deviceById.remove(bd.getId());
-                    pendingIterator.remove();
-                    log.info("Timed out enrollment of device #"+bd.getId());
-                } else {
-                    rs485.sendWithoutWait(pe.getFrame());
+            if (enrollEnabled) {
+                final Iterator<EnrollResponse> pendingIterator = pendingEnrollments.iterator();
+                while (pendingIterator.hasNext()) {
+                    EnrollResponse pe = pendingIterator.next();
+                    final BusDevice bd = pe.getBusDevice();
+                    if (bd.getCreated() < bd.getLastPollResponseSeen()) {
+                        pendingIterator.remove();
+                        log.info("Successful enrollment of device #" + bd.getId());
+                    } else if (now - bd.getCreated() > ENROLLMENT_TIMEOUT) {
+                        deviceById.remove(bd.getId());
+                        pendingIterator.remove();
+                        log.info("Timed out enrollment of device #" + bd.getId());
+                    } else {
+                        rs485.sendWithoutWait(pe.getFrame());
+                    }
                 }
-            }
 
-            // Special handling of enrollment
-            enrollmentRequest = null;
-            if (rs485.sendAndWaitForReply(PollFrame.create(0xff, 0))) {
-                lastReply = now;
-            }
-            if (enrollmentRequest != null) {
-                log.info("Got "+ enrollmentRequest);
-                final EnrollResponse enrollResponse = EnrollResponse.create(stateManager, enrollmentRequest, getFirstFreeNodeId());
-                if (rs485.sendAndWaitForReply(enrollResponse.getFrame())) {
+                // Special handling of enrollment
+                enrollmentRequest = null;
+                if (rs485.sendAndWaitForReply(PollFrame.create(0xff, 0))) {
                     lastReply = now;
                 }
-                pendingEnrollments.add(enrollResponse);
-                deviceById.put(enrollResponse.getBusDevice().getId(), enrollResponse.getBusDevice());
+                if (enrollmentRequest != null) {
+                    log.info("Got " + enrollmentRequest);
+                    final EnrollResponse enrollResponse = EnrollResponse.create(stateManager, enrollmentRequest, getFirstFreeNodeId());
+                    if (rs485.sendAndWaitForReply(enrollResponse.getFrame())) {
+                        lastReply = now;
+                    }
+                    pendingEnrollments.add(enrollResponse);
+                    deviceById.put(enrollResponse.getBusDevice().getId(), enrollResponse.getBusDevice());
+                }
             }
 
             if (!deviceById.isEmpty()) {

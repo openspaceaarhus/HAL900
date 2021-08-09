@@ -21,10 +21,12 @@ public class RS485 {
     private final byte[] transmitBuffer = new byte[512];
     private final Consumer<Frame> frameConsumer;
     private final Semaphore responseSemaphore = new Semaphore(1);
+    private final int answerTimeoutMs;
 
-    public RS485(File serialPort, Consumer<Frame> frameConsumer) {
+    public RS485(File serialPort, Consumer<Frame> frameConsumer, int answerTimeoutMs) {
         this.frameConsumer = frameConsumer;
         commPort = SerialPort.getCommPort(serialPort.getAbsolutePath());
+        this.answerTimeoutMs = answerTimeoutMs;
 
         commPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0);
         commPort.setBaudRate(BAUD);
@@ -67,21 +69,21 @@ public class RS485 {
     @SneakyThrows
     private boolean send(Frame frame, boolean waitForReply) {
         responseSemaphore.tryAcquire();
-        commPort.clearRTS();
+        commPort.clearRTS(); // Start driving the bus
         sleep(1);
         int bytes = frame.toBytes(transmitBuffer);
         final int written = commPort.writeBytes(transmitBuffer, bytes);
         if (written != bytes) {
             log.severe("Tried to write "+bytes+" but wrote "+written);
         }
-        sleep(1+timeToTransmit(bytes));
-        commPort.setRTS();
+        sleep(1+timeToTransmit(bytes)); // Approximate time it will take to send the data we just wrote.
+        commPort.setRTS(); // Stop driving the bus
 
         logBytes(frame.getType() != PollFrame.TYPE? Level.FINE : Level.FINEST, transmitBuffer, bytes);
 
         if (waitForReply) {
             final long t0 = System.currentTimeMillis();
-            if (responseSemaphore.tryAcquire(300, TimeUnit.MILLISECONDS)) {
+            if (responseSemaphore.tryAcquire(answerTimeoutMs, TimeUnit.MILLISECONDS)) {
                 final long ms = System.currentTimeMillis() - t0;
                 log.fine(()->"Got answer in " + ms + " ms");
                 return true;

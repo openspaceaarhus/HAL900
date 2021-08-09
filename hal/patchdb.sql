@@ -51,11 +51,7 @@ begin transaction;
 alter table rfid add column name varchar;
 alter table rfid alter column rfid type bigint;
 
-update rfid set name=rfid;
-
-/* Convert existing wg26 tags to wg34 */
-update rfid
-set rfid=((rfid*2)::bit(34)|b'1000000000000000000000000000000000')::bigint;
+update rfid set name=rfid where name is null;
 
 create table access_event_type (
    id int primary key,

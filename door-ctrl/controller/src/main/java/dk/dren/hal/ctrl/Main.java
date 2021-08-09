@@ -16,7 +16,7 @@ public class Main {
             DoorMinderConfig doorMinderConfig = DoorMinderConfig.load(configFile);
             final StateManager stateManager = new StateManager(doorMinderConfig);
 
-            Poller poller = new Poller(doorMinderConfig.getSerialDevice(), stateManager);
+            Poller poller = new Poller(doorMinderConfig.getSerialDevice(), stateManager, doorMinderConfig.getPollTimeout(), doorMinderConfig.isEnrollEnabled());
 
             poller.start();
             poller.join();

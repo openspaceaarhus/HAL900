@@ -1078,17 +1078,57 @@ sub rfidPage {
 
     $html .= '<h2>Eksisterende RFID nøgler</h2>';
 
-    $html .= qq'<table class="sortable"><tr><th>Ejer</th><th>RFID</th><th>Status</th></tr>\n';	
-    my $rr = db->sql("select m.id, realname, r.id, rfid, pin, lost ".
+    if ($p->{fix26}) {
+	my $rr = db->sql("select r.id, rfid, r.name ".
+			 "from rfid r order by id") or die "failed to look up rfids";
+	while (my ($id, $oldRfid, $name) = $rr->fetchrow_array) {
+	    next unless $name;
+	    my $parity = 0;
+	    my $pc = $name;
+	    while ($pc) {
+		if ($pc & 1) {
+		    $parity++;
+		}
+		$pc >>= 1;
+	    }
+
+	    my $newRfid = $name << 1;
+	    $newRfid |= 0x200000000;
+	    $newRfid |= $parity & 1;
+
+	    if ($newRfid != $oldRfid) {
+		my $exr = db->sql("select id from rfid where rfid=?", $newRfid);
+		my ($existing) = $exr->fetchrow_array;
+		$exr->finish;
+		if ($existing) {
+		    db->sql("update rfid set name=? where id=?", $name, $existing);
+		    db->sql("update rfid set lost=true where id=?", $id);
+		    print STDERR "$id\t$name\t$oldRfid\t$newRfid\tAlready Converted $existing\n";
+		} else {
+		    db->sql("update rfid set rfid=? where id=?", $newRfid, $id);
+		    print STDERR "$id\t$name\t$oldRfid\t$newRfid\tConverted\n";
+		}		    
+	    } else {
+		print STDERR "$id\t$name\t$oldRfid\t$newRfid\tOk\n";
+	    }
+	}
+	$rr->finish;
+	
+    }
+    
+    $html .= qq'<table class="sortable"><tr><th>Ejer</th><th>RFID</th><th>Navn</th><th>Status</th></tr>\n';	
+    my $rr = db->sql("select m.id, realname, r.id, rfid, pin, lost, r.name ".
 		      "from rfid r inner join member m on (r.owner_id=m.id) ".
 		      "order by r.id") or die "failed to look up rfids";
     $count = 0;
-    while (my ($owner_id, $owner_name, $rfid_id, $rfid, $pin, $lost) = $rr->fetchrow_array) {
+    while (my ($owner_id, $owner_name, $rfid_id, $rfid, $pin, $lost,$name) = $rr->fetchrow_array) {
 	my $class = ($count++ & 1) ? 'class="odd"' : 'class="even"';
 
 	my $status = $pin ? 'Ok' : $lost ? 'Tabt' : 'Mangler PIN';
+	$name ||= '';
+	
 	$html .= qq'<tr><td><a href="/hal/admin/members/$owner_id">$owner_name</a></td>'.
-	    qq'<td><a href="/hal/admin/rfid/$rfid_id">$rfid</a></td><td>$status</td></tr>\n';
+	    qq'<td><a href="/hal/admin/rfid/$rfid_id">$rfid</a></td><td>$name</td><td>$status</td></tr>\n';
     }
     $rr->finish;
     $html.= "</table>";    
