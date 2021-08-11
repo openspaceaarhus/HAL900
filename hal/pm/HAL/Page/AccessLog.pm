@@ -42,18 +42,32 @@ sub accessPage {
     my ($r,$q,$p) = @_;
     %ownerToLink = ();
     
-    my $limit = $p->{limit} || 200;
+    my $limit = $p->{limit} || 1000;
     die "Bad limit: $limit" unless $limit =~ /^\d+$/;
+
+    my $rb = db->sql("select device_id, index, name, set_event, clear_event from gpio_bit");
+    my %gb;
+    while (my ($did, $index, $name, $setEvent, $clearEvent) = $rb->fetchrow_array) {
+	my $bitId = "$did.$index";
+	
+	$gb{$bitId} = {
+	    name=>$name,
+	    setEvent=>$setEvent,
+	    clearEvent=>$clearEvent,
+	};
+    }
     
-    my $rs = db->sql('select created_remote,d.name as device,t.name as type, t.id,event_number,wiegand_data,event_text
+    $rb->finish;
+    
+    my $rs = db->sql('select * from (select created_remote,d.name as device,t.name as type, t.id,event_number,wiegand_data,event_text, e.id as eid, e.device_id
  from access_event e
  join access_device d on (d.id=e.device_id)
  join access_event_type t on (t.id=e.access_event_type)
- order by e.id desc limit ?', $limit);
+ order by e.id desc limit ?) as subselect order by eid', $limit);
 
-    my $html = "<table><tr><th>Tid (UTC)</th><th>Enhed</th><th>Type</th><th>#</th><th>Data</th><th>Text</th></tr>\n";
-    my $count = 0;
-    while (my ($created, $device, $type, $type_id, $eventNumber, $data, $text) = $rs->fetchrow_array) {
+    my @rows;
+    my $gpioStateByDevice = 0;
+    while (my ($created, $device, $type, $type_id, $eventNumber, $data, $text, $eventId, $deviceId) = $rs->fetchrow_array) {
 
 	if ($type_id == 255) {
 	    my $ul = rfidOwnerLink($data);
@@ -70,8 +84,35 @@ sub accessPage {
 	    if (defined $ul) {
 		$text = qq'Scanned $ul';
 	    }
-	}
-	
+	} elsif ($type_id == 3) {
+
+	    my @full;
+	    my @flips;
+	    for my $bit (0..7) {
+		my $mask = 1<<$bit;
+		my $old = $gpioStateByDevice & $mask;
+		my $new = $data & $mask;
+		my $bitId = "$deviceId.$bit";
+		my $gb = $gb{$bitId};
+		if ($gb) {
+		    push @full, "$gb->{name}=".($new ? '1' : '0');
+
+		    if ($old != $new) {
+			my $event = $new ? 'setEvent' : 'clearEvent';
+			if (my $et = $gb->{$event}) {
+			    push @flips, $et;
+			}
+		    }		
+		} else {
+		    push @full, "$bitId=".($new ? '1' : '0');			
+		}
+	    }
+
+	    my $full = join ', ', @full;
+	    $text = qq'<span title="$full">GPIO: '.join(", ", @flips)."</span>";
+	    
+	    $gpioStateByDevice = $data;
+	}	
 	
 	my @row = (
 	    $created,
@@ -80,11 +121,18 @@ sub accessPage {
 	    $eventNumber,
 	    $data // '',
 	    $text);
-		     
-	my $class = ($count++ & 1) ? 'class="odd"' : 'class="even"';
-	$html .= qq'<tr class="$class">'.join('', map { "<td>$_</td>" } @row)."</tr>\n";
 
+	unshift @rows, \@row;
     }
+    
+
+    my $html = "<table><tr><th>Tid (UTC)</th><th>Enhed</th><th>Type</th><th>#</th><th>Data</th><th>Text</th></tr>\n";
+		     
+    my $count = 0;
+    for my $row (@rows) {
+	my $class = ($count++ & 1) ? 'class="odd"' : 'class="even"';
+	$html .= qq'<tr class="$class">'.join('', map { "<td>$_</td>" } @$row)."</tr>\n";
+    }    
     $html .= "</table>";
 	
     $rs->finish;
