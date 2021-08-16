@@ -343,9 +343,16 @@ public class StateManager implements DoorMinder {
 
     @Override
     public boolean validateCredentials(int deviceId, long rfid, String pin) {
-        final String okPin;
+        String okPin;
         synchronized (this) {
             okPin = state.getRfidToPin().get(rfid);
+            if (okPin == null) {
+                long strippedRfid = stripWg34(rfid);
+                okPin = state.getRfidToPin().get(strippedRfid);
+                if (okPin != null) {
+                    log.info(() -> String.format("Did not find the raw rfd %x but did find the stripped version %x", rfid, strippedRfid));
+                }
+            }
         }
 
         if (okPin == null) {
@@ -353,9 +360,13 @@ public class StateManager implements DoorMinder {
             return false; // Unknown rfid
         }
 
-        // TODO: Check if this user has access to the door or not.
+        // TODO: Check if this user has access to the door or not, at the moment only rfids with door access are exported.
 
         return pin.equals(okPin);
+    }
+
+    public static long stripWg34(long rfid) {
+        return (rfid >> 1) & 0xffffffff;
     }
 
 }

@@ -1092,9 +1092,9 @@ sub rfidPage {
 		$pc >>= 1;
 	    }
 
-	    my $newRfid = $name << 1;
-	    $newRfid |= 0x200000000;
-	    $newRfid |= $parity & 1;
+	    my $newRfid = $name;
+	    #$newRfid |= 0x200000000;
+	    #$newRfid |= $parity & 1;
 
 	    if ($newRfid != $oldRfid) {
 		my $exr = db->sql("select id from rfid where rfid=?", $newRfid);
