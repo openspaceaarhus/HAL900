@@ -23,6 +23,12 @@ my %ownerToLink;
 sub rfidOwnerLink {
     my ($rfid) = @_;
 
+    return _rfidOwnerLink($rfid) || _rfidOwnerLink(($rfid >> 1) & 0xffffffff);
+}
+
+sub _rfidOwnerLink {
+    my ($rfid) = @_;
+
     return undef unless defined $rfid;
     
     return $ownerToLink{$rfid} if exists $ownerToLink{$rfid};

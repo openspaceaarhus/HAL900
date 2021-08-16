@@ -47,4 +47,9 @@ class WiegandEventTest {
         System.out.println(tag+"\t"+ bin + String.format(" %d 0x%x", unpacked, unpacked));
     }
 
+    @Test
+    public void hesthest() {
+        print("HH", 0xb42f1c5eL);
+        print ("SH", StateManager.stripWg34(0xb42f1c5eL));
+    }
 }
