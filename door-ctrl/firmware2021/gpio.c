@@ -5,6 +5,8 @@
 #include "board.h"
 #include "leds.h"
 
+uint8_t stableState;
+uint8_t stableTime;
 uint8_t lastReportedState;
 uint32_t currentToken;
 volatile uint16_t msTimer=1000;
@@ -58,11 +60,20 @@ void gpioInit(void) {
 
 void reportStateIfChanged() {
   uint8_t newState = currentState();
-  if (lastReportedState != newState) {
-    controlStateEvent(newState);
-    //P("New state: %x -> %x\r\n", lastReportedState, newState);
-    lastReportedState = newState;
-    setLEDs(newState>>2);
+  if (newState != stableState) {
+    stableTime = 0;
+    stableState = newState;
+  } else {
+    if (stableTime < 100) {
+      stableTime++;
+    } else {
+      if (lastReportedState != stableState) {
+	lastReportedState = stableState;
+	controlStateEvent(lastReportedState);
+	//P("New state: %x -> %x\r\n", lastReportedState, newState);
+	setLEDs(lastReportedState>>2);
+      }
+    }
   }
 }
 

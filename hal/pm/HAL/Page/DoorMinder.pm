@@ -18,7 +18,7 @@ sub state {
 
     my $state = {};
 
-    my $rs = db->sql('select rfid,pin from member m join rfid r on (r.owner_id=m.id) where dooraccess and not lost')
+    my $rs = db->sql('select rfid,pin from member m join rfid r on (r.owner_id=m.id) where dooraccess and not lost and pin is not null')
 	or die "Fail!";
     while (my ($rfid, $pin) = $rs->fetchrow_array) {
 	$state->{rfidToPin}{$rfid} = $pin;

@@ -49,7 +49,9 @@ class WiegandEventTest {
 
     @Test
     public void hesthest() {
-        print("HH", 0xb42f1c5eL);
-        print ("SH", StateManager.stripWg34(0xb42f1c5eL));
+        print ("xx", 0xffffffffL);
+        print("HH", 8594786602L);
+        print ("SH", StateManager.stripWg34(8594786602L));
+        print ("SS", 2426005L);
     }
 }

@@ -366,7 +366,7 @@ public class StateManager implements DoorMinder {
     }
 
     public static long stripWg34(long rfid) {
-        return (rfid >> 1) & 0xffffffff;
+        return (rfid >> 1) & 0xffffffffL;
     }
 
 }
