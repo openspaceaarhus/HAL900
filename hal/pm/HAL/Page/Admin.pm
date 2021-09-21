@@ -495,7 +495,7 @@ sub transactionsPage {
 		     "inner join account sa on (t.source_account_id = sa.id) ".
 		     "inner join account ta on (t.target_account_id = ta.id) ".
 		     "where target_account_id=? or source_account_id=? ".
-		     "order by t.id", $id, $id);
+		     "order by t.created, t.id", $id, $id);
     my $sum = 0;
     my $sumIn = 0;
     my $sumOut = 0;
