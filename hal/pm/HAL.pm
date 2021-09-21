@@ -97,6 +97,11 @@ sub configureHAL {
 	    test=>1,
 	    db=>'dbi:Pg:dbname=hal;user=ff;port=5432',
 	},
+	'mimer.btworld.dk'=>{
+	    root=>"/usr/local/www/hal/HAL900/hal",
+	    test=>0,
+	    db=>'dbi:Pg:dbname=hal;port=5432'	    
+	},
     );
     	
     if ($host eq 'docker') {
