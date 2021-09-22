@@ -36,16 +36,17 @@ $ct->finish;
 
 
 my %new;
-my $ns = $db->sql("select rfid, pin, r.id
+my $ns = $db->sql("select rfid, pin, r.id, m.updated
 from rfid r inner join member m on r.owner_id=m.id
 where m.doorAccess and pin is not null
 order by r.id
 ") or die "Urgh";
-
-while (my ($rfid, $pin, $rfid_id) = $ns->fetchrow_array) {
+my %rfidToUpdated;
+while (my ($rfid, $pin, $rfid_id, $updated) = $ns->fetchrow_array) {
     my $hash = keyHash($rfid & ((1<<25)-1), $pin);
     $new{$hash}++;
     $hash2rfid{$hash} = $rfid_id;
+    $rfidToUpdated{$rfid_id} = $updated;
 }
 $ns->finish;
 
@@ -53,10 +54,11 @@ for my $k (keys %new) {
     my $c = $current{$k}||0;
     my $n = $new{$k}||0;
     my $rfid_id = $hash2rfid{$k};
+    my $updated = $rfidToUpdated{$rfid_id};
 
     if ($c < $n) {
-	$db->sql("insert into doorTransaction (rfid_id, hash, kind) values (?,?,'a')",
-		 $rfid_id, $k) or die "Failed to insert hash add into door transaction table: $rfid_id $k";
+	$db->sql("insert into doorTransaction (rfid_id, hash, kind, created) values (?,?,'a',?)",
+		 $rfid_id, $k, $updated) or die "Failed to insert hash add into door transaction table: $rfid_id $k";
 	print "Adding hash: $k for rfid_id=$rfid_id\n";
     }
 }
@@ -65,10 +67,11 @@ for my $k (keys %current) {
     my $c = $current{$k}||0;
     my $n = $new{$k}||0;
     my $rfid_id = $hash2rfid{$k};
+    my $updated = $rfidToUpdated{$rfid_id};
 
     if ($c > $n) {
-	$db->sql("insert into doorTransaction (rfid_id, hash, kind) values (?,?,'d')",
-		 $rfid_id, $k) or die "Failed to insert hash delete into door transaction table: $rfid_id $k";
+	$db->sql("insert into doorTransaction (rfid_id, hash, kind, created) values (?,?,'d', ?)",
+		 $rfid_id, $k, $updated) or die "Failed to insert hash delete into door transaction table: $rfid_id $k";
 	print "Deleting hash: $k for rfid_id=$rfid_id\n";
     }
 }
