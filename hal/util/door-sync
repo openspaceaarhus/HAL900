@@ -14,11 +14,13 @@ use HAL::Util;
 
 my $db = new HAL::DB;
 
+my %hashToOwner;
 my %hash2rfid;
 my %current;
-my $ct = $db->sql("select id, hash, kind, rfid_id from doorTransaction order by id") or die "Urgh";
-while (my ($id, $hash, $kind, $rfid_id) = $ct->fetchrow_array) {
+my $ct = $db->sql("select t.id, t.hash, t.kind, t.rfid_id, r.owner_id from doorTransaction t join rfid r on r.id=t.rfid_id order by t.id") or die "Urgh";
+while (my ($id, $hash, $kind, $rfid_id, $ownerId) = $ct->fetchrow_array) {
     $hash2rfid{$hash} = $rfid_id;
+    $hashToOwner{$hash} = $ownerId;
 
     if ($kind eq 'a') {
 	$current{$hash}++;
@@ -67,9 +69,12 @@ for my $k (keys %current) {
     my $c = $current{$k}||0;
     my $n = $new{$k}||0;
     my $rfid_id = $hash2rfid{$k};
-    my $updated = $rfidToUpdated{$rfid_id};
 
     if ($c > $n) {
+	my $mu = $db->sql("select m.updated from member m where m.id=?", $hashToOwner{$k}) or die "Urgh";
+	my ($updated) = $mu->fetchrow_array;
+	$mu->finish;
+    
 	$db->sql("insert into doorTransaction (rfid_id, hash, kind, created) values (?,?,'d', ?)",
 		 $rfid_id, $k, $updated) or die "Failed to insert hash delete into door transaction table: $rfid_id $k";
 	print "Deleting hash: $k for rfid_id=$rfid_id\n";
