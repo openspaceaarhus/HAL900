@@ -202,8 +202,8 @@ $error
 BEGIN {
     ensureLogin(qr'^/hal/lokaler');
     ensureAdmin(qr'^/hal/lokaler/admin');
-    addHandler(qr'^/hal/lokaler/admin$', \&adminPage);
-    addHandler(qr'^/hal/lokaler/eval$', \&evalPage);
+#    addHandler(qr'^/hal/lokaler/admin$', \&adminPage);
+#    addHandler(qr'^/hal/lokaler/eval$', \&evalPage);
 }
 
 42;
