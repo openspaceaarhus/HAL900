@@ -940,13 +940,13 @@ sub addRFIDPage {
 	$html .= qq'</select></td></tr>\n';
 	$p->{rfid} = $p->{urfid} if $p->{urfid};
     }
-    
+
     my $errors = 0;
     $html .= textInput("RFID",
 		       "Indtast RFID værdien eller brug USB RFID læseren.",
 		       'rfid', $p, sub {
 	my ($v,$p,$name) = @_;
-	if ($v !~ /^\d{5,10}$/) {
+	if ($v !~ /^\d{5,11}$/) {
 	    $errors ++;
 	    return "Æh, hvad? Det ligner ikke et gyldigt RFID";	    
 	}

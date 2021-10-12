@@ -42,10 +42,11 @@ public class BusDevice {
     private String pin = "";
     private long lastWiegandActivity = 0;
     private byte[] controlToken;
-    private boolean stateChangeArmed;
     private int desiredOutputState;
     private byte currentOutputState;
     private long lockTime;
+    private boolean outputPhase;
+
 
 
     /**
@@ -59,12 +60,17 @@ public class BusDevice {
             desiredOutputState = 0;
             lockTime = 0;
         }
-        if (desiredOutputState != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
-            log.fine(()->String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
-            return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
-        } else {
-            return PollFrame.create(getId(), getLastEventSeen());
+
+        if (outputPhase) {
+            outputPhase = false;
+            if (desiredOutputState != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
+                log.fine(()->String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
+                return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
+            }
         }
+
+        outputPhase = true;
+        return PollFrame.create(getId(), getLastEventSeen());
     }
 
     /**
