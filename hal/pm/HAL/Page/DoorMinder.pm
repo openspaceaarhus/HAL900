@@ -26,7 +26,7 @@ sub state {
     $rs->finish;
 
     
-    my $dr = db->sql('select id,name,aesKey from access_device where id <> 0') or die "Fail!";
+    my $dr = db->sql('select id,name,aesKey from access_device where id <> 0 and not disabled') or die "Fail!";
     my $sep = "\n";
     while (my ($id, $name, $aesKey) = $dr->fetchrow_array) {
 	$state->{devices}{$id} = {

@@ -132,3 +132,8 @@ insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2,
 insert into gpio_bit (device_id, index, name, set_event, clear_event) values (2, 7, "Bystrøm", "Bystrøm ok", "Bystrøm mangler");
 
 commit;
+
+
+begin;
+alter table access_device add column disabled boolean not null default false;
+commit;
