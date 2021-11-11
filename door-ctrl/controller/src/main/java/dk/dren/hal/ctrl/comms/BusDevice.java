@@ -85,9 +85,13 @@ public class BusDevice {
             PollResponse pr = PollResponse.from(frame, id, secretKey);
 
             for (DeviceEvent event : pr.getEvents()) {
-                lastEventSeen = event.getEventNumber();
-                sendEvent(event);
-                handleEvent(event);
+                if (lastEventSeen != event.getEventNumber()) {
+                    lastEventSeen = event.getEventNumber();
+                    sendEvent(event);
+                    handleEvent(event);
+                } else {
+                    log.fine(()->"Ignoring duplicate event: "+lastEventSeen);
+                }
             }
         }
     }

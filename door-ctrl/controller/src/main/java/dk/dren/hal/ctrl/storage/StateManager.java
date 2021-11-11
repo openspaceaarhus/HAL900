@@ -207,7 +207,7 @@ public class StateManager implements DoorMinder {
                             .append("\n");
                 }
             } catch (IOException e) {
-                log.log(Level.SEVERE, "Failed while appending to " + config.getEventsFile(), e);
+                log.log(Level.SEVERE, "Failed while appending "+events.size()+" events to " + config.getEventsFile(), e);
                 return;
             }
             events.clear();
