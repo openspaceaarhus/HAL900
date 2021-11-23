@@ -93,7 +93,8 @@ sub dispatchRequest($) {
     }
     $r->headers_out->set('Strict-Transport-Security', 'max-age=15768000') unless testMode();
 
-    if (getSessionID) {
+    if ($r->unparsed_uri =~ m!^/hal/bell/!) {
+    } elsif (getSessionID) {
 	if (isLoggedIn) {
 	    setCurrentUser("id:".getSession->{member_id});
 	}
