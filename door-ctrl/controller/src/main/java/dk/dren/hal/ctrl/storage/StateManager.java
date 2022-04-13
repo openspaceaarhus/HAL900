@@ -115,7 +115,7 @@ public class StateManager implements DoorMinder {
     private void addDevice(BusDevice busDevice) {
         DeviceState ds = new DeviceState(busDevice.getId(),
                 "New @" + millisToString(busDevice.getCreated()),
-                AES256Key.store(busDevice.getSecretKey()));
+                AES256Key.store(busDevice.getSecretKey()), 0);
 
         synchronized (this) {
             state.getDevices().put(ds.getId(), ds);
@@ -278,6 +278,10 @@ public class StateManager implements DoorMinder {
                         state.getDevices().put(halDevice.getId(), halDevice);
                     }
                 } else {
+                    if (myDevice.getOutputs() != halDevice.getOutputs()) {
+                        log.info("New output state for "+myDevice.getId()+" "+ myDevice.getOutputs() + " -> "+halDevice.getOutputs());
+                        myDevice.setOutputs(halDevice.getOutputs());
+                    }
                     if (!myDevice.getName().equals(halDevice.getName())) {
                         log.info("New name for "+myDevice.getId()+" "+ myDevice.getName() + " -> "+halDevice.getName());
                         myDevice.setName(halDevice.getName());

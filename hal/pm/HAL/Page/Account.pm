@@ -413,46 +413,97 @@ sub passwdPage {
     return outputAccountPage('passwd', 'Skift Password', $form);
 }
 
+sub mtRadio {
+  my ($types, $id, $current) = @_;
+  
+  return '<td></td>' unless defined $id;
+  my $type = $types->{$id};
+ 
+  my $checked = defined $current && $type->{id} == $current ? ' checked' : '';
+  
+  return qq'<td title="$type->{name}">'.
+    qq'<input type="radio" name="membertype" value="$type->{id}"$checked>$type->{fee},-</input>'.
+    qq'</td>'
+  
+}
+
+my $BUDGET_FOR_BREAKEVEN = 8773;
+
 sub typePage {
     my ($r,$q,$p) = @_;
-
-    my $form = '<form method="POST" action="/hal/account/type">';
+      
+    my $mcRes = (db->sql('select count(*) from member m join membertype t on (t.id=m.membertype_id) where monthlyfee > 0'));
+    my ($memberCount) = $mcRes->fetchrow_array;
+    $mcRes->finish;
+    
+    my $breakevenFee = int($BUDGET_FOR_BREAKEVEN/$memberCount)+1; 
 
     my $uRes = (db->sql('select membertype_id from member where id=?', getSession->{member_id}));
     my ($membertype_id) = $uRes->fetchrow_array;
     $uRes->finish;
     
-    my @types;
+    my %types;
     my $typesRes = db->sql('select id, memberType, monthlyFee, doorAccess from memberType where userpick order by id');
     while (my ($id, $memberType, $monthlyFee, $doorAccess) = $typesRes->fetchrow_array) {
-	push @types, {
+	$types{$id} = {
+	    id=> $id,
 	    key=>$id,
+            fee=>int($monthlyFee),
+            da=>$doorAccess,
+            mt=>$memberType,
 	    name=>"$memberType ($monthlyFee kr/måned) ".($doorAccess ? '- Inkluderer nøgle til lokalerne' : '- Uden nøgle til lokalerne'),
 	}
     }
     $typesRes->finish;
+
+    my $tableRes = db->sql('select * from memberType_group order by id');
+    my @groups;
+    while (my $row = $tableRes->fetchrow_hashref) {
+      push @groups, $row;
+    }
+    $tableRes->finish;
     
     $p->{membertype} ||= $membertype_id;
 
     my $errors = 0;
-    $form .= radioInput("Medlems type", "Vælg den type medlemsskab du ønsker", 'membertype', $p, sub {
-	my ($v,$p,$name) = @_;
-	unless ($v) {
-	    $errors++;
-	    return "Vælg venligst hvilken type medlemsskab du ønsker";
-	}
-	return "";
-    }, @types);
-
+    my $form = qq'<p>Se <a href="https://wiki.osaa.dk/index.php?title=MedlemsTyper">MedlemsTyper på wiki</a> for en komplet beskrivelse af typerne.
+</p><p>Lige nu er der $memberCount betalende medlemmer i alt, hvis alle betalte $breakevenFee kr per måned i kontingent, så ville økonomien være bæredygtig.</p>
+<table><tr><th>Takst</th><th>Studie-takst</th><th>Beskrivelse</th></tr>    
+    <form method="POST" action="/hal/account/type">';
+    
+    for my $row (@groups) {
+      my $norm = mtRadio(\%types, $row->{normal_id}, $p->{membertype});
+      my $half = mtRadio(\%types, $row->{half_id}, $p->{membertype});      
+      $form .= qq'<tr style="$row->{css_style}">$norm$half<td>$row->{description}</td></tr>\n';
+    }
+    
+    $errors++ unless $p->{membertype};
+    $errors++ unless $types{$p->{membertype}}; # Validate that the type is pickable
+    
     $form .= '
+    </table>
 <hr>
 <input type="submit" name="gogogo" value="Skift min medlemstype!">
-</form>';
+</form>
+';
+
+    if ($p->{membertype}) {
+      my $t = $types{$p->{membertype}};
+      if ($t) {
+        if ($t->{fee} < $breakevenFee) {
+          $form .= qq'<p>Du har valgt at betale $t->{fee} kr/måned i kontingent, det er mindre end de
+          $breakevenFee kr / måned der skal til for at foreningen kan overleve på lang sigt,
+          kan det tænkes du kan undvære lidt mere?</p>';
+        } else {
+          $form .= qq'<p>Du har valgt at betale $t->{fee} kr/måned i kontingent, det er super fedt, tak!</p>';        
+        }
+    }
+    }
+
 
     if ($p->{gogogo}) {
 	if ($errors) {
-	    $errors = "en" if $errors == 1;
-	    $form .= "<p>Hovsa, der er $errors fejl!</p>";
+	    $form .= "<p>Hovsa, vælg venligst hvilken type medlemsskab du ønsker!</p>";
 	} else {
 	    if (db->sql('update member set membertype_id=? where id=?',
 			$p->{membertype}, getSession->{member_id})) {

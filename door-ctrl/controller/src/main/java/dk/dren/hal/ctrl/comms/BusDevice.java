@@ -6,6 +6,7 @@ import dk.dren.hal.ctrl.comms.frames.PollResponse;
 import dk.dren.hal.ctrl.events.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.java.Log;
 
 import javax.crypto.SecretKey;
@@ -38,6 +39,10 @@ public class BusDevice {
     @Getter
     private long created = System.currentTimeMillis();
 
+    @Setter
+    @Getter
+    private int externalOutputs = 0;
+
     private long rfid = 0;
     private String pin = "";
     private long lastWiegandActivity = 0;
@@ -63,9 +68,10 @@ public class BusDevice {
 
         if (outputPhase) {
             outputPhase = false;
-            if (desiredOutputState != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
-                log.fine(()->String.format("%x -> %x", desiredOutputState, (currentOutputState&OS_OUTPUT_MASK)));
-                return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, desiredOutputState, 30, 0);
+            final int combinedOutputstate = externalOutputs | desiredOutputState;
+            if (combinedOutputstate != (currentOutputState&OS_OUTPUT_MASK) || controlToken == null) {
+                log.fine(()->String.format("%x -> %x", desiredOutputState, (combinedOutputstate&OS_OUTPUT_MASK)));
+                return ControlFrame.create(getId(), getLastEventSeen(), secretKey, controlToken, combinedOutputstate, 30, 0);
             }
         }
 

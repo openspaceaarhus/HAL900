@@ -11,4 +11,5 @@ public class DeviceState {
     private int id;
     private String name;
     private String aesKey;
+    private int outputs;
 }

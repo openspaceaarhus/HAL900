@@ -137,3 +137,25 @@ commit;
 begin;
 alter table access_device add column disabled boolean not null default false;
 commit;
+
+
+begin;
+
+create table membertype_group (
+  id integer primary key,
+  normal_id integer references membertype(id) not null,
+  half_id integer references membertype(id),
+  description varchar not null,
+  css_style varchar default '' not null
+);
+
+insert into membertype_group (id, normal_id, half_id, description, css_style)
+   values (100, 9, null, 'Ekstra højt kontingent for maksimal støtte af foreningen', '');
+insert into membertype_group (id, normal_id, half_id, description, css_style)
+   values (200, 7, 8, 'Normalt kontingent, med adgang til at låse sig ind 24/7', 'background-color:#80ff80; font-weight: bold;');
+insert into membertype_group (id, normal_id, half_id, description, css_style)
+   values (300, 1, 4, 'Legacy kontingent, uden adgang til at låse sig ind', 'color: #808080');
+insert into membertype_group (id, normal_id, half_id, description, css_style)
+   values (400, 2, null, 'Støtte medlemsskab, aka. gratis-medlem, uden privilegier', 'color: #808080');
+
+commit;
