@@ -110,7 +110,19 @@ create table gpio_bit (
 /* Outputs */
 insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 0, "Lås", "Låst op", "Låst");
 insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 1, "Sirene", "Sirene tændt", "Sirene slukket");
-insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 2, "Wiegand ok", null, null);
+insert into gpio_bit (device_id, index, n    my $typesRes = db->sql('select id, memberType, monthlyFee, doorAccess from memberType where userpick order by id');
+    while (my ($id, $memberType, $monthlyFee, $doorAccess) = $typesRes->fetchrow_array) {
+	$types{$id} = {
+	    id=> $id,
+	    key=>$id,
+            fee=>$monthlyFee,
+            da=>$doorAccess,
+            mt=>$memberType,
+	    name=>"$memberType ($monthlyFee kr/måned) ".($doorAccess ? '- Inkluderer nøgle til lokalerne' : '- Uden nøgle til lokalerne'),
+	}
+    }
+    $typesRes->finish;
+ame, set_event, clear_event) values (1, 2, "Wiegand ok", null, null);
 insert into gpio_bit (device_id, index, name, set_event, clear_event) values (1, 3, "bit 3", "bit 3 set", "bit 3 cleared");
 
 /* inputs */
@@ -157,5 +169,19 @@ insert into membertype_group (id, normal_id, half_id, description, css_style)
    values (300, 1, 4, 'Legacy kontingent, uden adgang til at låse sig ind', 'color: #808080');
 insert into membertype_group (id, normal_id, half_id, description, css_style)
    values (400, 2, null, 'Støtte medlemsskab, aka. gratis-medlem, uden privilegier', 'color: #808080');
+
+commit;
+
+
+
+begin;
+
+create table budget (
+  id serial primary key,
+  created timestamp default now() not null,
+  amount numeric(10,2) not null
+);
+
+insert into budget (amount) values (8773);
 
 commit;

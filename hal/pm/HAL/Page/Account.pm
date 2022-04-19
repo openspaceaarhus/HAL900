@@ -14,6 +14,7 @@ use HAL::Pages;
 use HAL::Session;
 use HAL::Util;
 use HAL::Email;
+use HAL::Budget;
 
 
 sub outputAccountPage($$$;$) {
@@ -427,16 +428,12 @@ sub mtRadio {
   
 }
 
-my $BUDGET_FOR_BREAKEVEN = 8773;
-
 sub typePage {
     my ($r,$q,$p) = @_;
       
-    my $mcRes = (db->sql('select count(*) from member m join membertype t on (t.id=m.membertype_id) where monthlyfee > 0'));
-    my ($memberCount) = $mcRes->fetchrow_array;
-    $mcRes->finish;
+    my $cb = currentBudget();
     
-    my $breakevenFee = int($BUDGET_FOR_BREAKEVEN/$memberCount)+1; 
+    my ($memberCount, $breakevenFee) = ($cb->{memberCount}, $cb->{breakevenFee});    
 
     my $uRes = (db->sql('select membertype_id from member where id=?', getSession->{member_id}));
     my ($membertype_id) = $uRes->fetchrow_array;
@@ -466,8 +463,7 @@ sub typePage {
     $p->{membertype} ||= $membertype_id;
 
     my $errors = 0;
-    my $form = qq'<p>Se <a href="https://wiki.osaa.dk/index.php?title=MedlemsTyper">MedlemsTyper på wiki</a> for en komplet beskrivelse af typerne.
-</p><p>Lige nu er der $memberCount betalende medlemmer i alt, hvis alle betalte $breakevenFee kr per måned i kontingent, så ville økonomien være bæredygtig.</p>
+    my $form = qq'<p>Se <a href="https://wiki.osaa.dk/index.php?title=MedlemsTyper">MedlemsTyper på wiki</a> for en komplet beskrivelse af typerne.</p>
 <table><tr><th>Takst</th><th>Studie-takst</th><th>Beskrivelse</th></tr>    
     <form method="POST" action="/hal/account/type">';
     
@@ -490,11 +486,7 @@ sub typePage {
     if ($p->{membertype}) {
       my $t = $types{$p->{membertype}};
       if ($t) {
-        if ($t->{fee} < $breakevenFee) {
-          $form .= qq'<p>Du har valgt at betale $t->{fee} kr/måned i kontingent, det er mindre end de
-          $breakevenFee kr / måned der skal til for at foreningen kan overleve på lang sigt,
-          kan det tænkes du kan undvære lidt mere?</p>';
-        } else {
+        if ($t->{fee} >= $breakevenFee) {
           $form .= qq'<p>Du har valgt at betale $t->{fee} kr/måned i kontingent, det er super fedt, tak!</p>';        
         }
     }
