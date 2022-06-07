@@ -19,7 +19,7 @@ sub statusPage {
   my ($r,$q,$p) = @_;
 
   my %dues;
-  my $ct = db->sql("select target_account_id,comment,amount from accounttransaction where source_account_id in (100001, 100004)")
+  my $ct = db->sql("select target_account_id,comment,amount from accounttransaction where source_account_id >= 100001")
     or die "Urgh";
   my %sum;
   while (my ($id, $comment, $amount) = $ct->fetchrow_array) {
@@ -44,7 +44,7 @@ sub statusPage {
               $dn++ unless $dues{$d}{$id};
           }
       }
-      push @row, $up, $dn, $sum{$d}/200;
+      push @row, $up, $dn, $sum{$d}/235;
 
       push @table, \@row;
 
