@@ -109,9 +109,9 @@ Tlf. $phone
 
     my $okCount = 0;
     my $noPin = 0;
-    my $rr = db->sql("select id, rfid, pin, lost from rfid where owner_id=?", getSession->{member_id})
+    my $rr = db->sql("select id, rfid, pin, lost, name from rfid where owner_id=?", getSession->{member_id})
 	or die "Failed to fetch list of RFIDs for user";
-    while (my ($id, $rfid, $pin, $lost) = $rr->fetchrow_array) {
+    while (my ($id, $rfid, $pin, $lost, $name) = $rr->fetchrow_array) {
 	
 	my $status = '';
 	if ($lost) {
@@ -124,7 +124,8 @@ Tlf. $phone
 	    $noPin = qq'/hal/account/rfid/$id';
 	}
 
-	$html .= qq'<li>RFID nøgle <a href="/hal/account/rfid/$id">$rfid [$status]</a></li>';
+	my $nn = $name // $rfid;
+	$html .= qq'<li>RFID nøgle <a href="/hal/account/rfid/$id">$nn [$status]</a></li>';
     }
     $rr->finish;
 

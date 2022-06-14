@@ -185,3 +185,4 @@ create table budget (
 insert into budget (amount) values (8773);
 
 commit;
+

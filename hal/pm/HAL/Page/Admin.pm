@@ -961,6 +961,30 @@ sub addRFIDPage {
 	}
 	return '';
     });
+    
+    my $rfidName;
+    $html .= textInput("Navn",
+		       "Indtast RFID navn, dem fra fo skal ligne: fo:\$nummer",
+		       'name', $p, sub {
+	my ($v,$p,$name) = @_;
+	if ($v and $v !~ /^fo:\d+$/) {
+	    $errors++;
+	    return "Æh, hvad? Det ligner ikke et gyldigt navn";	    
+	}
+	
+	my $res = db->sql("select m.id, realname from rfid r inner join member m on (r.owner_id=m.id) where name = ?", $v);
+	my ($owner_id, $owner_name) = $res->fetchrow_array;
+	$res->finish;
+	
+	if ($owner_id) {
+	    $errors++;
+	    return qq'Dette RFID navn er allerede i brug af <a href="/hal/admin/members/$owner_id">$owner_name</a>';
+	}
+	
+        $rfidName = $v;
+	
+	return '';
+    });
 	
     $html .= qq'<hr><input style="clear: both" type="submit" name="gogogo" value="Tilføj RFID">';
     $html .= qq'</form>';
@@ -971,8 +995,8 @@ document.getElementById("rfid").focus();
 </script>
 ';
     if ($p->{rfid} and !$errors) {
-	db->sql("insert into rfid (owner_id, rfid) values (?,?)",
-		$member_id, $p->{rfid})
+	db->sql("insert into rfid (owner_id, rfid, name) values (?,?,?)",
+		$member_id, $p->{rfid}, $rfidName)
 	    or die "Failed to insert new rfid for $member_id, $p->{rfid}";
 	return outputGoto("/hal/admin/rfid") if $p->{fromrfid};
 	return outputGoto("/hal/admin/members/$member_id");
@@ -991,17 +1015,24 @@ sub rfidDetailsPage {
 	db->sql("update rfid set lost=false where id=?", $rfid_id) or die "Failed to mark rfid as found";
     }
 
-    my $res = db->sql("select m.id, realname, rfid, pin, lost ".
+    my $res = db->sql("select m.id, realname, rfid, pin, lost, name ".
 		      "from rfid r inner join member m on (r.owner_id=m.id) ".
 		      "where r.id = ?", $rfid_id) or die "failed to look up rfid";
-    my ($owner_id, $owner_name, $rfid, $pin, $lost) = $res->fetchrow_array;
+    my ($owner_id, $owner_name, $rfid, $pin, $lost, $name) = $res->fetchrow_array;
     $res->finish;
     return outputGoto("/hal/admin/rfid") unless $rfid;
 
     my $html = '';
 
-    $html .= qq'<p>Detaljer for RFID #$rfid:</p>';
-    $html .= "<ul>";
+
+    my $nice = $name ? $name : "#$rfid";
+    $html .= qq'<p>Detaljer for RFID $nice:</p>';
+
+    $html .= "<ul>";    
+    if ($name) {
+	$html .= qq'<li>Name: $name</li>';
+    }
+    $html .= qq'<li>RFID: $rfid</li>';
     $html .= qq'<li>Ejer: <a href="/hal/admin/members/$owner_id">$owner_name</a></li>';
     if ($pin) {
 	$html .= '<li>PIN: OK</li>';
